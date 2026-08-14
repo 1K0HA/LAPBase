@@ -3,21 +3,166 @@
 
   // ===== МОСТ НАТИВНЫХ ФУНКЦИЙ ANDROID =====
   function nativeVibrate(type = 'click') {
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if (tg && tg.HapticFeedback) {
+      try {
+        if (type === 'heavy') tg.HapticFeedback.impactOccurred('medium');
+        else tg.HapticFeedback.selectionChanged();
+        return;
+      } catch (_) {}
+    }
+
     if (window.AndroidBridge && typeof window.AndroidBridge.vibrate === 'function') {
       window.AndroidBridge.vibrate(type);
     } else if (navigator.vibrate) {
-      navigator.vibrate(15);
+      navigator.vibrate(type === 'heavy' ? 30 : 15);
     }
   }
 
   function nativeOpenUrl(url) {
     nativeVibrate('click');
+
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if (tg) {
+      try {
+        if (/^https:\/\/t\.me\//i.test(url) && typeof tg.openTelegramLink === 'function') {
+          tg.openTelegramLink(url);
+          return;
+        }
+        if (typeof tg.openLink === 'function') {
+          tg.openLink(url);
+          return;
+        }
+      } catch (_) {}
+    }
+
     if (window.AndroidBridge && typeof window.AndroidBridge.openExternalUrl === 'function') {
       window.AndroidBridge.openExternalUrl(url);
     } else {
       window.open(url, '_blank');
     }
   }
+
+
+  // ===== TELEGRAM MINI APP / FULLSCREEN =====
+  (function initTelegramMiniApp() {
+    const tg = window.Telegram && window.Telegram.WebApp;
+
+    function syncTelegramSafeArea() {
+      const root = document.documentElement;
+      const safe = (tg && tg.safeAreaInset) || {};
+      const content = (tg && tg.contentSafeAreaInset) || {};
+
+      const n = value => Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
+      const safeTop = n(safe.top);
+      const safeBottom = n(safe.bottom);
+      const safeLeft = n(safe.left);
+      const safeRight = n(safe.right);
+      const contentTop = n(content.top);
+      const contentBottom = n(content.bottom);
+      const contentLeft = n(content.left);
+      const contentRight = n(content.right);
+
+      // contentSafeAreaInset is the correct inset for avoiding Telegram's own UI.
+      // Some clients briefly report 0 while entering fullscreen, so use a guard
+      // only until Telegram supplies a real content-safe top value.
+      const fullscreenTopGuard = tg && tg.isFullscreen && contentTop <= 0 ? 72 : 0;
+      const effectiveTop = Math.max(contentTop || fullscreenTopGuard, safeTop);
+
+      root.style.setProperty('--lap-js-safe-top', `${Math.round(effectiveTop)}px`);
+      root.style.setProperty('--lap-js-safe-bottom', `${Math.round(Math.max(contentBottom, safeBottom))}px`);
+      root.style.setProperty('--lap-js-safe-left', `${Math.round(Math.max(contentLeft, safeLeft))}px`);
+      root.style.setProperty('--lap-js-safe-right', `${Math.round(Math.max(contentRight, safeRight))}px`);
+    }
+
+    function syncViewport() {
+      const stableHeight = tg && Number(tg.viewportStableHeight) > 0
+        ? Number(tg.viewportStableHeight)
+        : (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+
+      if (stableHeight) {
+        document.documentElement.style.setProperty('--app-height', `${Math.round(stableHeight)}px`);
+      }
+
+      document.documentElement.classList.toggle('tg-fullscreen', Boolean(tg && tg.isFullscreen));
+      syncTelegramSafeArea();
+    }
+
+    function syncTelegramThemeVars() {
+      if (!tg || !tg.themeParams) return;
+      const tp = tg.themeParams;
+      const root = document.documentElement;
+      const map = {
+        bg_color: '--lap-tg-bg',
+        secondary_bg_color: '--lap-tg-secondary',
+        text_color: '--lap-tg-text',
+        hint_color: '--lap-tg-hint',
+        section_bg_color: '--lap-tg-section',
+        section_separator_color: '--lap-tg-separator'
+      };
+      Object.entries(map).forEach(([key, cssVar]) => {
+        if (tp[key]) root.style.setProperty(cssVar, tp[key]);
+      });
+    }
+
+    function syncTelegramChrome() {
+      if (!tg) return;
+      syncTelegramThemeVars();
+      const bg = (tg.themeParams && tg.themeParams.bg_color) || '#0b0d14';
+      const bottom = (tg.themeParams && (tg.themeParams.bottom_bar_bg_color || tg.themeParams.secondary_bg_color)) || bg;
+      try { tg.setHeaderColor(bg); } catch (_) {}
+      try { tg.setBackgroundColor(bg); } catch (_) {}
+      try {
+        if (typeof tg.isVersionAtLeast === 'function' && tg.isVersionAtLeast('7.10') && typeof tg.setBottomBarColor === 'function') {
+          tg.setBottomBarColor(bottom);
+        }
+      } catch (_) {}
+    }
+
+    if (!tg) {
+      syncViewport();
+      window.addEventListener('resize', syncViewport, { passive: true });
+      if (window.visualViewport) window.visualViewport.addEventListener('resize', syncViewport, { passive: true });
+      return;
+    }
+
+    document.documentElement.classList.add('telegram-miniapp');
+
+    try { tg.ready(); } catch (_) {}
+    syncTelegramChrome();
+    syncViewport();
+
+    // На старых клиентах expand() даёт максимальную доступную высоту.
+    try { tg.expand(); } catch (_) {}
+
+    // Bot API 8.0+: настоящий Telegram fullscreen с прозрачным верхним chrome.
+    try {
+      if (typeof tg.isVersionAtLeast === 'function' &&
+          tg.isVersionAtLeast('8.0') &&
+          typeof tg.requestFullscreen === 'function' &&
+          !tg.isFullscreen) {
+        tg.requestFullscreen();
+      }
+    } catch (_) {}
+
+    const refreshLayout = () => {
+      syncViewport();
+      requestAnimationFrame(() => {
+        if (typeof updateIndicator === 'function') updateIndicator();
+      });
+    };
+
+    ['viewportChanged', 'safeAreaChanged', 'contentSafeAreaChanged', 'fullscreenChanged']
+      .forEach(eventName => {
+        try { tg.onEvent(eventName, refreshLayout); } catch (_) {}
+      });
+
+    try { tg.onEvent('themeChanged', syncTelegramChrome); } catch (_) {}
+    try { tg.onEvent('fullscreenFailed', refreshLayout); } catch (_) {}
+
+    window.addEventListener('resize', refreshLayout, { passive: true });
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', refreshLayout, { passive: true });
+  })();
 
 
   const i18n = {
@@ -30,8 +175,25 @@
 
       feedTitle: "📡 Патчи",
       feedPatchText: "Всем привет, рад что вы скачали и установили это приложение! Оно будет обновляться и пополняться новыми функциями которые вы можете предлагать написав нам в ТГ-канал.<br><br>Приятного пользования!",
+      patchLatestLabel: "Новое обновление",
+      patch101Title: "Что нового в LAPBase",
+      patch101Item1: "Приложение теперь полноценно работает на весь экран внутри Telegram.",
+      patch101Item2: "Исправили отступы сверху и снизу, чтобы кнопки Telegram больше не перекрывали интерфейс.",
+      patch101Item3: "Обновили внешний вид: карточки, кнопки и поля стали удобнее и аккуратнее на телефоне.",
+      patch101Item4: "Выбор зданий теперь листается вбок свайпом, как карточки в мобильных приложениях.",
+      patch101Item5: "Итоги калькулятора стали заметнее, а ресурсы — проще для быстрого просмотра.",
+      patch101Item6: "Нижнее меню подстроено под полный экран и стало удобнее для управления одной рукой.",
+      patch101Item7: "Добавили лёгкий отклик при нажатиях, если Telegram и устройство это поддерживают.",
+      patch101Item8: "Ссылки на Telegram и внешние страницы теперь открываются удобнее прямо из приложения.",
+      patch101Item9: "Приложение лучше подстраивается под разные размеры экрана и поворот телефона.",
+      patch101Item10: "Исправили положение логотипа LAPBase — теперь он не должен перекрываться кнопками Telegram.",
+      patch101Item11: "В разделе гайдов оставили простую кнопку «На главную» для быстрого возврата к началу.",
+      patch101Item12: "Добавили более плавные анимации и приятные эффекты при нажатиях.",
+      patchShowMore: "Показать всё",
+      patchShowLess: "Свернуть",
 
       guidesTitle: "📖 База Знаний",
+      guidesHomeBtn: "На главную",
       refreshBtn: "Обновить",
       guidesUrl: "https://teletype.in/@1k0na_inf/+last-asylum-plague?theme=dark",
 
@@ -92,8 +254,25 @@
 
       feedTitle: "📡 Patch Notes",
       feedPatchText: "Hello everyone, glad you downloaded and installed this app! It will be updated and expanded with new features that you can suggest by writing to our Telegram channel.<br><br>Enjoy using it!",
+      patchLatestLabel: "New update",
+      patch101Title: "What's new in LAPBase",
+      patch101Item1: "Full UI adaptation for Telegram Mini App fullscreen mode.",
+      patch101Item2: "Added Telegram Safe Area support and correct spacing around system UI.",
+      patch101Item3: "Refreshed visuals with mobile-first cards, panels, buttons, and inputs.",
+      patch101Item4: "Redesigned building selection with horizontal swipe cards and scroll snap.",
+      patch101Item5: "Improved the calculator totals card and resource visual hierarchy.",
+      patch101Item6: "Bottom navigation is adapted for fullscreen and thumb-friendly use.",
+      patch101Item7: "Added native Telegram Haptic Feedback support.",
+      patch101Item8: "Telegram and external links now use Mini App APIs when available.",
+      patch101Item9: "Improved behavior on viewport changes, orientation changes, and fullscreen transitions.",
+      patch101Item10: "Fixed the LAPBase brand area so the logo no longer overlaps Telegram controls.",
+      patch101Item11: "Guides now keep the reliable Home action without unstable cross-origin controls.",
+      patch101Item12: "Added extra mobile animations, active states, and visual-effect optimizations.",
+      patchShowMore: "Show all",
+      patchShowLess: "Collapse",
 
       guidesTitle: "📖 Knowledge Base",
+      guidesHomeBtn: "Home",
       refreshBtn: "Refresh",
       guidesUrl: "https://teletype.in/@1k0na_inf/+last-asylum-plague?theme=dark",
 
@@ -165,6 +344,14 @@
       }
     });
 
+    const patchCard = document.getElementById('patch-v101');
+    const patchToggleText = document.querySelector('#patch101Toggle .patch-expand-text');
+    if (patchToggleText) {
+      patchToggleText.textContent = patchCard && patchCard.classList.contains('expanded')
+        ? i18n[lang].patchShowLess
+        : i18n[lang].patchShowMore;
+    }
+
     const iframe = document.getElementById('teletype-iframe');
     if (iframe && i18n[lang].guidesUrl) {
       iframe.src = i18n[lang].guidesUrl;
@@ -184,6 +371,22 @@
     });
   }
 
+  window.togglePatch101 = function() {
+    nativeVibrate('click');
+    const card = document.getElementById('patch-v101');
+    const button = document.getElementById('patch101Toggle');
+    if (!card || !button) return;
+
+    const isExpanded = card.classList.toggle('expanded');
+    button.setAttribute('aria-expanded', String(isExpanded));
+
+    const text = button.querySelector('.patch-expand-text');
+    if (text) {
+      text.textContent = isExpanded ? i18n[currentLang].patchShowLess : i18n[currentLang].patchShowMore;
+      text.removeAttribute('data-i18n');
+    }
+  };
+
   function switchTab(tabId, element) {
     nativeVibrate('click');
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -192,7 +395,12 @@
     element.classList.add('active');
 
     const mainElem = document.querySelector('main');
-    if (mainElem) mainElem.scrollTop = 0;
+    if (mainElem) {
+      mainElem.scrollTop = 0;
+      // На вкладке гайдов внешний контейнер не должен перехватывать
+      // вертикальный свайп у cross-origin iframe.
+      mainElem.classList.toggle('guides-mode', tabId === 'guides');
+    }
 
     updateIndicator();
   }
@@ -214,8 +422,7 @@
     indicator.style.width = width + 'px';
   }
 
-  function resetTeletype(e) {
-    e.preventDefault();
+  function goGuidesHome() {
     nativeVibrate('click');
     const iframe = document.getElementById('teletype-iframe');
     if (iframe && i18n[currentLang].guidesUrl) {
@@ -1413,7 +1620,12 @@
         totalTimeSec += bTime;
 
         if (subEl) {
-          subEl.innerHTML = `🌾 ${formatNumber(bGrain)} | 🪵 ${formatNumber(bWood)} | 🌿 ${formatNumber(bGrass)} | ⏱️ ${formatTime(bTime)}`;
+          subEl.innerHTML = `
+            <div class="building-stat grain"><span class="building-stat-icon">🌾</span><span class="building-stat-value">${formatNumber(bGrain)}</span></div>
+            <div class="building-stat wood"><span class="building-stat-icon">🪵</span><span class="building-stat-value">${formatNumber(bWood)}</span></div>
+            <div class="building-stat grass"><span class="building-stat-icon">🌿</span><span class="building-stat-value">${formatNumber(bGrass)}</span></div>
+            <div class="building-stat time"><span class="building-stat-icon">⏱️</span><span class="building-stat-value">${formatTime(bTime)}</span></div>
+          `;
         }
       });
 
@@ -1447,22 +1659,35 @@
         const displayName = currentLang === 'en' ? (buildingNamesEn[name] || name) : name;
 
         tile.innerHTML = `
+          <div class="building-tile-topline">
+            <span class="building-card-kicker">BUILDING</span>
+            <button type="button" class="building-select-button" onclick="toggleBuildingTile('${name}')" aria-label="Выбрать здание">
+              <span class="building-checkbox-custom"></span>
+            </button>
+          </div>
+
           <div class="building-tile-header">
+            <div class="building-icon-shell" aria-hidden="true">🏛️</div>
             <div class="building-title-wrap" onclick="toggleBuildingTile('${name}')">
-              <div class="building-checkbox-custom"></div>
-              <span class="building-name">🏛️ ${displayName}</span>
+              <span class="building-name">${displayName}</span>
+              <span class="building-card-status">Выбрано для расчёта</span>
             </div>
           </div>
+
+          <div class="building-levels-title">Уровни улучшения</div>
           <div class="building-controls">
             <div class="level-select-wrap">
-              <span class="level-select-label" data-i18n="fromLvlLabel">С:</span>
+              <span class="level-select-label" data-i18n="fromLvlLabel">С уровня:</span>
               <select id="calc-from-${name}" class="level-select" onchange="window.calcCalculateTotals()">${optionsFrom}</select>
             </div>
+            <div class="building-level-arrow" aria-hidden="true">→</div>
             <div class="level-select-wrap">
-              <span class="level-select-label" data-i18n="toLvlLabel">До:</span>
+              <span class="level-select-label" data-i18n="toLvlLabel">До уровня:</span>
               <select id="calc-to-${name}" class="level-select" onchange="window.calcCalculateTotals()">${optionsTo}</select>
             </div>
           </div>
+
+          <div class="building-summary-label">Стоимость улучшения</div>
           <div class="building-subtotals" id="calc-sub-${name}"></div>
         `;
 
@@ -1533,3 +1758,35 @@
     renderBuildings();
     setAppLanguage(currentLang);
   })();
+
+// ===== PREMIUM UI MICRO-ANIMATIONS =====
+(() => {
+  const valueIds = [
+    'calc-total-grain',
+    'calc-total-wood',
+    'calc-total-grass',
+    'calc-total-power',
+    'calc-total-time'
+  ];
+
+  valueIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el || !window.MutationObserver) return;
+
+    const observer = new MutationObserver(() => {
+      el.classList.remove('value-pop');
+      void el.offsetWidth;
+      el.classList.add('value-pop');
+    });
+
+    observer.observe(el, { childList: true, characterData: true, subtree: true });
+  });
+
+  document.querySelectorAll('button, .social-link-item, .building-title-wrap, .popup-btn').forEach(el => {
+    el.addEventListener('pointerdown', () => el.classList.add('is-pressed'));
+    const release = () => el.classList.remove('is-pressed');
+    el.addEventListener('pointerup', release);
+    el.addEventListener('pointercancel', release);
+    el.addEventListener('pointerleave', release);
+  });
+})();
