@@ -66,7 +66,7 @@
       // contentSafeAreaInset is the correct inset for avoiding Telegram's own UI.
       // Some clients briefly report 0 while entering fullscreen, so use a guard
       // only until Telegram supplies a real content-safe top value.
-      const fullscreenTopGuard = tg && tg.isFullscreen && contentTop <= 0 ? 72 : 0;
+      const fullscreenTopGuard = tg && tg.isFullscreen && contentTop <= 0 ? 48 : 0;
       const effectiveTop = Math.max(contentTop || fullscreenTopGuard, safeTop);
 
       root.style.setProperty('--lap-js-safe-top', `${Math.round(effectiveTop)}px`);
@@ -165,6 +165,42 @@
   })();
 
 
+  // ===== ACCENT COLOR =====
+  const accentPresets = {
+    orange: { main: '#ff922b', bright: '#ffad5c', deep: '#ff7417' },
+    blue:   { main: '#4d9cff', bright: '#7db8ff', deep: '#2478e8' },
+    green:  { main: '#34c759', bright: '#67db82', deep: '#1fa243' },
+    purple: { main: '#a970ff', bright: '#c39cff', deep: '#7c42dc' },
+    pink:   { main: '#ff5f9e', bright: '#ff8fba', deep: '#dc3678' },
+    cyan:   { main: '#34cdd7', bright: '#70e1e8', deep: '#1499a2' }
+  };
+
+  function setAccentColor(name, vibrate = true) {
+    const preset = accentPresets[name] || accentPresets.orange;
+    if (vibrate) nativeVibrate('click');
+    document.documentElement.style.setProperty('--text-accent', preset.main);
+    document.documentElement.style.setProperty('--accent', preset.main);
+    document.documentElement.style.setProperty('--accent-bright', preset.bright);
+    document.documentElement.style.setProperty('--accent-deep', preset.deep);
+    document.documentElement.style.setProperty('--lap-accent', preset.main);
+    document.documentElement.style.setProperty('--lap-accent-bright', preset.bright);
+    document.documentElement.style.setProperty('--lap-accent-deep', preset.deep);
+    document.documentElement.style.setProperty('--lap-accent-2', preset.bright);
+    document.documentElement.style.setProperty('--accent-soft', `color-mix(in srgb, ${preset.main} 14%, transparent)`);
+    document.documentElement.style.setProperty('--accent-glow', `color-mix(in srgb, ${preset.main} 28%, transparent)`);
+    document.documentElement.style.setProperty('--lap-accent-soft', `color-mix(in srgb, ${preset.main} 13%, transparent)`);
+    document.documentElement.style.setProperty('--lap-accent-line', `color-mix(in srgb, ${preset.main} 24%, transparent)`);
+    document.documentElement.dataset.accent = name;
+    localStorage.setItem('appAccentColor', name);
+    document.querySelectorAll('.accent-color-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.accent === name);
+      btn.setAttribute('aria-pressed', btn.dataset.accent === name ? 'true' : 'false');
+    });
+  }
+
+  window.setAccentColor = setAccentColor;
+
+
   const i18n = {
     ru: {
       navFeed: "Лента",
@@ -177,18 +213,18 @@
       feedPatchText: "Всем привет, рад что вы скачали и установили это приложение! Оно будет обновляться и пополняться новыми функциями которые вы можете предлагать написав нам в ТГ-канал.<br><br>Приятного пользования!",
       patchLatestLabel: "Новое обновление",
       patch101Title: "Что нового в LAPBase",
-      patch101Item1: "Приложение теперь полноценно работает на весь экран внутри Telegram.",
-      patch101Item2: "Исправили отступы сверху и снизу, чтобы кнопки Telegram больше не перекрывали интерфейс.",
-      patch101Item3: "Обновили внешний вид: карточки, кнопки и поля стали удобнее и аккуратнее на телефоне.",
-      patch101Item4: "Выбор зданий теперь листается вбок свайпом, как карточки в мобильных приложениях.",
-      patch101Item5: "Итоги калькулятора стали заметнее, а ресурсы — проще для быстрого просмотра.",
-      patch101Item6: "Нижнее меню подстроено под полный экран и стало удобнее для управления одной рукой.",
-      patch101Item7: "Добавили лёгкий отклик при нажатиях, если Telegram и устройство это поддерживают.",
-      patch101Item8: "Ссылки на Telegram и внешние страницы теперь открываются удобнее прямо из приложения.",
-      patch101Item9: "Приложение лучше подстраивается под разные размеры экрана и поворот телефона.",
-      patch101Item10: "Исправили положение логотипа LAPBase — теперь он не должен перекрываться кнопками Telegram.",
-      patch101Item11: "В разделе гайдов оставили простую кнопку «На главную» для быстрого возврата к началу.",
-      patch101Item12: "Добавили более плавные анимации и приятные эффекты при нажатиях.",
+      patch101Item1: "Полноэкранный режим в Telegram стал аккуратнее: интерфейс лучше использует весь экран и не залезает под элементы Mini App.",
+      patch101Item2: "Обновили внешний вид LAPBase — больше стекла, мягче панели и чище переходы между элементами.",
+      patch101Item3: "В настройках появился выбор акцентного цвета. Он меняет оформление всего приложения.",
+      patch101Item4: "Переработали карточки зданий в калькуляторе: на телефоне ими стало удобнее пользоваться и сравнивать уровни.",
+      patch101Item5: "Добавили автоматический выбор русского или английского языка по настройкам Telegram. Язык по-прежнему можно сменить вручную.",
+      patch101Item6: "Перевели названия зданий, настройки, подсказки и другие динамические элементы интерфейса.",
+      patch101Item7: "Калькулятор лучше подстраивается под небольшие экраны, а итоговые ресурсы читаются заметнее.",
+      patch101Item8: "Подправили верхнюю часть приложения и положение логотипа для fullscreen-режима.",
+      patch101Item9: "Нижняя панель, кнопки, поля и карточки получили более цельный мобильный стиль.",
+      patch101Item10: "В разделе гайдов оставили быстрый возврат «На главную».",
+      patch101Item11: "Добавили нативный виброотклик Telegram там, где он поддерживается.",
+      patch101Item12: "Исправили несколько мелочей в размерах, отступах и анимациях, чтобы приложение ощущалось стабильнее.",
       patchShowMore: "Показать всё",
       patchShowLess: "Свернуть",
 
@@ -208,6 +244,7 @@
       resDiscountLabel: "Скидка на ресурсы (%)",
       speedupLabel: "Ускорение стр-ва (%)",
       selectBuildingsTitle: "🏛️ Выбор зданий",
+      swipeBuildingsHint: "Свайпни вбок →",
       totalCostTitle: "📊 Итоговый расход",
       fullNumbersToggle: "Полные цифры",
       resGrain: "Зерно",
@@ -236,6 +273,22 @@
       appLangLabel: "Язык приложения",
       displayGroupTitle: "Отображение",
       uiSizeLabel: "Размер интерфейса",
+      accentColorLabel: "Акцентный цвет",
+      accentGroupTitle: "Цвет интерфейса",
+      accentOrange: "Оранжевый",
+      accentBlue: "Синий",
+      accentGreen: "Зелёный",
+      accentPurple: "Фиолетовый",
+      accentPink: "Розовый",
+      accentCyan: "Бирюзовый",
+      guidesActionsAria: "Управление гайдами",
+      accentGroupAria: "Выбор акцентного цвета",
+      buildingSelectAria: "Выбрать здание",
+      buildingSelectedStatus: "Выбрано для расчёта",
+      buildingLevelsTitle: "Уровни улучшения",
+      buildingUpgradeCost: "Стоимость улучшения",
+      guidesFrameTitle: "База знаний LAPBase",
+      supportAria: "Поддержать разработку",
       socialGroupTitle: "Социальные сети",
       tgChannelLabel: "Telegram-канал",
       contactDevLabel: "Написать разработчику",
@@ -256,18 +309,18 @@
       feedPatchText: "Hello everyone, glad you downloaded and installed this app! It will be updated and expanded with new features that you can suggest by writing to our Telegram channel.<br><br>Enjoy using it!",
       patchLatestLabel: "New update",
       patch101Title: "What's new in LAPBase",
-      patch101Item1: "Full UI adaptation for Telegram Mini App fullscreen mode.",
-      patch101Item2: "Added Telegram Safe Area support and correct spacing around system UI.",
-      patch101Item3: "Refreshed visuals with mobile-first cards, panels, buttons, and inputs.",
-      patch101Item4: "Redesigned building selection with horizontal swipe cards and scroll snap.",
-      patch101Item5: "Improved the calculator totals card and resource visual hierarchy.",
-      patch101Item6: "Bottom navigation is adapted for fullscreen and thumb-friendly use.",
-      patch101Item7: "Added native Telegram Haptic Feedback support.",
-      patch101Item8: "Telegram and external links now use Mini App APIs when available.",
-      patch101Item9: "Improved behavior on viewport changes, orientation changes, and fullscreen transitions.",
-      patch101Item10: "Fixed the LAPBase brand area so the logo no longer overlaps Telegram controls.",
-      patch101Item11: "Guides now keep the reliable Home action without unstable cross-origin controls.",
-      patch101Item12: "Added extra mobile animations, active states, and visual-effect optimizations.",
+      patch101Item1: "Fullscreen mode in Telegram now uses the screen more cleanly and keeps content clear of Mini App controls.",
+      patch101Item2: "LAPBase has a refreshed look with softer glass surfaces, cleaner panels and smoother transitions.",
+      patch101Item3: "Settings now include accent colors, and the selected color is used across the whole app.",
+      patch101Item4: "Building cards in the calculator were reworked for phones, making levels and options easier to handle.",
+      patch101Item5: "The app can automatically choose Russian or English from Telegram settings, while manual language selection still works.",
+      patch101Item6: "Building names, settings, hints and other dynamic interface text are now translated as well.",
+      patch101Item7: "The calculator adapts better to smaller screens, with totals and resources easier to read at a glance.",
+      patch101Item8: "The top area and LAPBase logo position were tuned for fullscreen mode.",
+      patch101Item9: "Navigation, buttons, fields and cards now share a more consistent mobile style.",
+      patch101Item10: "Guides keep a quick Home button for returning to the start of the knowledge base.",
+      patch101Item11: "Telegram haptic feedback is used for taps on supported devices.",
+      patch101Item12: "We also fixed a number of spacing, sizing and animation details to make the app feel more stable.",
       patchShowMore: "Show all",
       patchShowLess: "Collapse",
 
@@ -287,6 +340,7 @@
       resDiscountLabel: "Resource discount (%)",
       speedupLabel: "Build speedup (%)",
       selectBuildingsTitle: "🏛️ Select Buildings",
+      swipeBuildingsHint: "Swipe sideways →",
       totalCostTitle: "📊 Total Expenses",
       fullNumbersToggle: "Full digits",
       resGrain: "Grain",
@@ -315,6 +369,22 @@
       appLangLabel: "App Language",
       displayGroupTitle: "Display",
       uiSizeLabel: "Interface Size",
+      accentColorLabel: "Accent color",
+      accentGroupTitle: "Interface color",
+      accentOrange: "Orange",
+      accentBlue: "Blue",
+      accentGreen: "Green",
+      accentPurple: "Purple",
+      accentPink: "Pink",
+      accentCyan: "Cyan",
+      guidesActionsAria: "Guide controls",
+      accentGroupAria: "Choose accent color",
+      buildingSelectAria: "Select building",
+      buildingSelectedStatus: "Included in calculation",
+      buildingLevelsTitle: "Upgrade levels",
+      buildingUpgradeCost: "Upgrade cost",
+      guidesFrameTitle: "LAPBase Knowledge Base",
+      supportAria: "Support development",
       socialGroupTitle: "Social Links",
       tgChannelLabel: "Telegram Channel",
       contactDevLabel: "Contact Developer",
@@ -326,13 +396,26 @@
     }
   };
 
-  let currentLang = localStorage.getItem('appLang') || 'ru';
+  function detectNativeLanguage() {
+    const saved = localStorage.getItem('appLang');
+    if (saved && i18n[saved]) return saved;
+
+    const tgLang = window.Telegram && window.Telegram.WebApp &&
+      window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user &&
+      window.Telegram.WebApp.initDataUnsafe.user.language_code;
+    const browserLang = (navigator.languages && navigator.languages[0]) || navigator.language || 'ru';
+    const source = String(tgLang || browserLang || 'ru').toLowerCase();
+    return source.startsWith('ru') ? 'ru' : 'en';
+  }
+
+  let currentLang = detectNativeLanguage();
 
   function setAppLanguage(lang) {
     if (!i18n[lang]) return;
     nativeVibrate('click');
     currentLang = lang;
     localStorage.setItem('appLang', lang);
+    document.documentElement.lang = lang;
 
     document.getElementById('langBtnRu').classList.toggle('active', lang === 'ru');
     document.getElementById('langBtnEn').classList.toggle('active', lang === 'en');
@@ -342,6 +425,15 @@
       if (i18n[lang][key]) {
         el.innerHTML = i18n[lang][key];
       }
+    });
+
+    document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+      const key = el.getAttribute('data-i18n-aria-label');
+      if (i18n[lang][key]) el.setAttribute('aria-label', i18n[lang][key]);
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const key = el.getAttribute('data-i18n-title');
+      if (i18n[lang][key]) el.setAttribute('title', i18n[lang][key]);
     });
 
     const patchCard = document.getElementById('patch-v101');
@@ -360,6 +452,10 @@
     if (typeof applySizeByIndex === 'function' && typeof currentSizeIndex !== 'undefined') {
       const sizeLabel = document.getElementById('sizeValueLabel');
       if (sizeLabel) sizeLabel.textContent = i18n[lang].sizeNames[currentSizeIndex];
+    }
+
+    if (typeof window.calcUpdateSelectAllControl === 'function') {
+      window.calcUpdateSelectAllControl();
     }
 
     if (typeof window.calcCalculateTotals === 'function') {
@@ -1490,14 +1586,39 @@
 
     const buildingNamesEn = {
       "Святилище": "Sanctuary",
-      "Зал Альянса": "Alliance Hall"
+      "Зал Альянса": "Alliance Hall",
+      "Мастерская противоядий": "Antidote Workshop",
+      "Казарма": "Barracks",
+      "Хижина строителей": "Builder Hut",
+      "Ферма 1-5": "Farm 1–5",
+      "Мастерская по ремонту снаряжения": "Equipment Repair Workshop",
+      "Зерновой склад": "Grain Warehouse",
+      "Цветник 1-5": "Herb Garden 1–5",
+      "Травяной склад": "Herb Warehouse",
+      "Лазарет 1-5": "Infirmary 1–5",
+      "Древесный склад": "Wood Warehouse",
+      "Лесопилка 1-5": "Sawmill 1–5",
+      "Мастерская Ворона": "Raven Workshop",
+      "Исследовательская лаборатория": "Research Laboratory",
+      "Разведывательный отряд": "Scout Squad",
+      "Плавильный цех": "Smelter",
+      "Отряд": "Squad",
+      "Таверна": "Tavern",
+      "Полигон 1-5": "Training Ground 1–5",
+      "Стены": "Walls",
+      "Статуя рейнджера": "Ranger Statue",
+      "Статуя колдуна": "Mage Statue",
+      "Статуя воина": "Warrior Statue",
+      "Сторожевая башня": "Watchtower",
+      "Ткацкая мастерская": "Weaving Workshop"
     };
 
     const buildingsContainer = document.getElementById('calc-buildings-container');
     const defFromSelect = document.getElementById('calc-def-from');
     const defToSelect = document.getElementById('calc-def-to');
     const applyDefBtn = document.getElementById('calc-apply-def-btn');
-    const selectAllBtn = document.getElementById('calc-select-all-btn');
+    const selectAllToggle = document.getElementById('calc-select-all-toggle');
+    const selectAllLabel = document.getElementById('calc-select-all-label');
     const discountResInput = document.getElementById('calc-discount-res');
     const discountTimeInput = document.getElementById('calc-discount-time');
     const fullNumbersToggle = document.getElementById('calc-full-numbers');
@@ -1636,6 +1757,27 @@
       totalTimeEl.textContent = formatTime(totalTimeSec);
     }
 
+
+    function updateSelectAllControl() {
+      if (!selectAllLabel) return;
+      selectAllLabel.textContent = isAllSelected
+        ? i18n[currentLang].deselectAllBtn
+        : i18n[currentLang].selectAllBtn;
+      if (selectAllToggle) selectAllToggle.checked = isAllSelected;
+    }
+
+    function syncSelectAllState() {
+      const totalTiles = buildingNames.length;
+      const activeTiles = buildingNames.reduce((count, name) => {
+        const tile = document.getElementById(`calc-tile-${name}`);
+        return count + (tile && tile.classList.contains('active') ? 1 : 0);
+      }, 0);
+      isAllSelected = totalTiles > 0 && activeTiles === totalTiles;
+      updateSelectAllControl();
+    }
+
+    window.calcUpdateSelectAllControl = updateSelectAllControl;
+
     function renderBuildings() {
       buildingsContainer.innerHTML = '';
 
@@ -1661,7 +1803,7 @@
         tile.innerHTML = `
           <div class="building-tile-topline">
             <span class="building-card-kicker">BUILDING</span>
-            <button type="button" class="building-select-button" onclick="toggleBuildingTile('${name}')" aria-label="Выбрать здание">
+            <button type="button" class="building-select-button" onclick="toggleBuildingTile('${name}')" aria-label="Выбрать здание" data-i18n-aria-label="buildingSelectAria">
               <span class="building-checkbox-custom"></span>
             </button>
           </div>
@@ -1670,11 +1812,11 @@
             <div class="building-icon-shell" aria-hidden="true">🏛️</div>
             <div class="building-title-wrap" onclick="toggleBuildingTile('${name}')">
               <span class="building-name">${displayName}</span>
-              <span class="building-card-status">Выбрано для расчёта</span>
+              <span class="building-card-status" data-i18n="buildingSelectedStatus">Выбрано для расчёта</span>
             </div>
           </div>
 
-          <div class="building-levels-title">Уровни улучшения</div>
+          <div class="building-levels-title" data-i18n="buildingLevelsTitle">Уровни улучшения</div>
           <div class="building-controls">
             <div class="level-select-wrap">
               <span class="level-select-label" data-i18n="fromLvlLabel">С уровня:</span>
@@ -1687,7 +1829,7 @@
             </div>
           </div>
 
-          <div class="building-summary-label">Стоимость улучшения</div>
+          <div class="building-summary-label" data-i18n="buildingUpgradeCost">Стоимость улучшения</div>
           <div class="building-subtotals" id="calc-sub-${name}"></div>
         `;
 
@@ -1695,6 +1837,7 @@
       });
 
       calculateTotals();
+      syncSelectAllState();
     }
 
     window.toggleBuildingTile = function(name) {
@@ -1703,6 +1846,7 @@
       if (tile) {
         tile.classList.toggle('active');
         tile.classList.toggle('disabled', !tile.classList.contains('active'));
+        syncSelectAllState();
         calculateTotals();
       }
     };
@@ -1735,19 +1879,23 @@
     });
 
     let isAllSelected = true;
-    selectAllBtn.addEventListener('click', () => {
-      nativeVibrate('click');
-      isAllSelected = !isAllSelected;
-      buildingNames.forEach(name => {
-        const tile = document.getElementById(`calc-tile-${name}`);
-        if (tile) {
-          tile.classList.toggle('active', isAllSelected);
-          tile.classList.toggle('disabled', !isAllSelected);
-        }
+    if (selectAllToggle) {
+      selectAllToggle.checked = true;
+      selectAllToggle.addEventListener('change', () => {
+        nativeVibrate('click');
+        isAllSelected = !!selectAllToggle.checked;
+        buildingNames.forEach(name => {
+          const tile = document.getElementById(`calc-tile-${name}`);
+          if (tile) {
+            tile.classList.toggle('active', isAllSelected);
+            tile.classList.toggle('disabled', !isAllSelected);
+          }
+        });
+        updateSelectAllControl();
+        calculateTotals();
       });
-      selectAllBtn.textContent = isAllSelected ? i18n[currentLang].deselectAllBtn : i18n[currentLang].selectAllBtn;
-      calculateTotals();
-    });
+    }
+    updateSelectAllControl();
 
     discountResInput.addEventListener('input', calculateTotals);
     discountTimeInput.addEventListener('input', calculateTotals);
@@ -1756,6 +1904,7 @@
     loadSettings();
     fillDefaultSelects();
     renderBuildings();
+    setAccentColor(localStorage.getItem('appAccentColor') || 'orange', false);
     setAppLanguage(currentLang);
   })();
 
