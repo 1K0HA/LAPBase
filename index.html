@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>LAPBase</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="liquid-bg">
+    <div class="blob"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+  <div class="app-container app-size-medium" id="appContainer">
+  <header>
+    <div class="app-title">LAPBase</div>
+  </header>
+
+  <main>
+    <!-- Вкладка "Лента" -->
+    <section id="feed" class="tab-content active">
+      <div class="section-title" data-i18n="feedTitle">📡 Патчи</div>
+      <div class="card-update">
+        <span class="badge-version">v1.0.0</span>
+        <p class="patch-welcome-text" data-i18n="feedPatchText">
+          Всем привет, рад что вы скачали и установили это приложение! Оно будет обновляться и пополняться новыми функциями которые вы можете предлагать написав нам в ТГ-канал.<br><br>
+          Приятного пользования!
+        </p>
+      </div>
+    </section>
+
+    <!-- Вкладка "Гайды" -->
+    <section id="guides" class="tab-content">
+      <div class="section-title">
+        <span data-i18n="guidesTitle">📖 База Знаний</span>
+        <a href="https://teletype.in/@1k0na_inf/+last-asylum-plague?theme=dark"
+           target="teletype-iframe"
+           class="title-badge"
+           data-i18n="refreshBtn"
+           onclick="resetTeletype(event)">Обновить</a>
+      </div>
+      <div class="webview-card">
+        <iframe
+                id="teletype-iframe"
+                name="teletype-iframe"
+                src="https://teletype.in/@1k0na_inf/+last-asylum-plague?theme=dark"
+                class="teletype-frame"
+                title="Teletype View">
+        </iframe>
+      </div>
+    </section>
+
+    <!-- Вкладка "Калькулятор" -->
+    <section id="calc" class="tab-content">
+      <div class="section-title" data-i18n="calcTitle">🧮 Калькулятор ресурсов</div>
+
+      <div class="card-update">
+        <div class="calc-group-title" data-i18n="defLevelsTitle">🎯 Уровни по умолчанию</div>
+        <div class="calc-row-inputs">
+          <div class="calc-field">
+            <label for="calc-def-from" data-i18n="fromLvlLabel">С уровня:</label>
+            <select id="calc-def-from"></select>
+          </div>
+          <div class="calc-field">
+            <label for="calc-def-to" data-i18n="toLvlLabel">До уровня:</label>
+            <select id="calc-def-to"></select>
+          </div>
+        </div>
+        <div class="calc-btn-group">
+          <button class="calc-btn" id="calc-apply-def-btn" data-i18n="applyBtn">Применить</button>
+          <button class="calc-btn calc-btn-secondary" id="calc-select-all-btn" data-i18n="deselectAllBtn">Снять все</button>
+        </div>
+      </div>
+
+      <div class="card-update">
+        <div class="calc-group-title" data-i18n="discountsTitle">⚡ Скидки и Ускорения</div>
+        <div class="calc-row-inputs">
+          <div class="calc-field">
+            <label for="calc-discount-res" data-i18n="resDiscountLabel">Скидка на ресурсы (%)</label>
+            <input type="number" id="calc-discount-res" min="0" max="99" value="0" placeholder="0">
+          </div>
+          <div class="calc-field">
+            <label for="calc-discount-time" data-i18n="speedupLabel">Ускорение стр-ва (%)</label>
+            <input type="number" id="calc-discount-time" min="0" max="999" value="0" placeholder="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="calc-buildings-header" data-i18n="selectBuildingsTitle">🏛️ Выбор зданий</div>
+      <div id="calc-buildings-container" class="calc-buildings-list"></div>
+
+      <div class="card-update total-card" style="margin-top: var(--spacing-unit);">
+        <div class="total-header">
+          <span data-i18n="totalCostTitle">📊 Итоговый расход</span>
+          <label class="toggle-label">
+            <input type="checkbox" id="calc-full-numbers" checked onchange="window.calcSaveSettings(); window.calcCalculateTotals(); nativeVibrate('click')">
+            <span class="toggle-custom"></span>
+            <span data-i18n="fullNumbersToggle">Полные цифры</span>
+          </label>
+        </div>
+        <div class="total-grid">
+          <div class="total-item">
+            <span class="total-icon">🌾</span>
+            <div class="total-info">
+              <span class="total-label" data-i18n="resGrain">Зерно</span>
+              <span class="total-value" id="calc-total-grain">0</span>
+            </div>
+          </div>
+          <div class="total-item">
+            <span class="total-icon">🪵</span>
+            <div class="total-info">
+              <span class="total-label" data-i18n="resWood">Древесина</span>
+              <span class="total-value" id="calc-total-wood">0</span>
+            </div>
+          </div>
+          <div class="total-item">
+            <span class="total-icon">🌿</span>
+            <div class="total-info">
+              <span class="total-label" data-i18n="resGrass">Трава</span>
+              <span class="total-value" id="calc-total-grass">0</span>
+            </div>
+          </div>
+          <div class="total-item">
+            <span class="total-icon">⚡</span>
+            <div class="total-info">
+              <span class="total-label" data-i18n="resPower">Мощь</span>
+              <span class="total-value" id="calc-total-power">0</span>
+            </div>
+          </div>
+          <div class="total-item total-item-wide">
+            <span class="total-icon">⏱️</span>
+            <div class="total-info">
+              <span class="total-label" data-i18n="buildTimeLabel">Время строительства</span>
+              <span class="total-value" id="calc-total-time">0 d. 0 h. 0 m.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Вкладка "Время" -->
+    <section id="time" class="tab-content">
+      <div class="section-title" data-i18n="timeTitle">🕒 Конвертер времени</div>
+
+      <button class="toggle-converter-btn" id="toggleConverterBtn">
+        <span id="toggleBtnText" data-i18n="showConverter">🕒 Показать конвертер</span>
+        <span class="arrow">▼</span>
+      </button>
+
+      <div class="converter-wrapper" id="converterWrapper">
+        <div class="converter-card">
+          <h1 data-i18n="utcHeader">🕒 Конвертер UTC</h1>
+
+          <div class="field">
+            <label for="fromOffset" data-i18n="sourceOffsetLabel">Исходное смещение (ваш часовой пояс)</label>
+            <select id="fromOffset"></select>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="timeInput" data-i18n="timeInputLabel">Время (ЧЧ:ММ:СС)</label>
+              <input type="time" id="timeInput" step="1">
+            </div>
+            <div class="field">
+              <label for="toOffset" data-i18n="gameOffsetLabel">Часовой пояс игры</label>
+              <select id="toOffset"></select>
+            </div>
+          </div>
+
+          <div class="result">
+            <span class="label" data-i18n="gameTimeResultLabel">Время в игре (сервер)</span>
+            <span class="value" id="resultValue">--:--:--</span>
+          </div>
+
+          <p class="hint" data-i18n="converterHint">Время пересчитывается автоматически каждую секунду. При клике на поле ввода автообновление приостанавливается для удобства ручного ввода.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Вкладка "Настройки" -->
+    <section id="settings" class="tab-content">
+      <div class="section-title" data-i18n="settingsTitle">⚙️ Настройки</div>
+
+      <div class="card-update">
+        <div class="settings-group">
+          <div class="settings-group-title" data-i18n="langGroupTitle">Язык / Language</div>
+          <div class="settings-item">
+            <div class="settings-item-label">
+              <span class="icon">🌐</span>
+              <span data-i18n="appLangLabel">Язык приложения</span>
+            </div>
+            <div class="settings-control">
+              <div class="lang-selector-btn-group">
+                <button class="lang-btn active" id="langBtnRu" onclick="setAppLanguage('ru')">Русский</button>
+                <button class="lang-btn" id="langBtnEn" onclick="setAppLanguage('en')">English</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-title" data-i18n="displayGroupTitle">Отображение</div>
+          <div class="settings-item size-setting-item">
+            <div class="size-slider-header">
+              <div class="settings-item-label">
+                <span class="icon">🔤</span>
+                <span data-i18n="uiSizeLabel">Размер интерфейса</span>
+              </div>
+              <span class="size-value-badge" id="sizeValueLabel">Средний</span>
+            </div>
+
+            <div class="size-slider-wrapper">
+              <span class="size-label-icon size-label-min">A</span>
+              <input type="range" id="sizeSlider" class="ios-slider" min="0" max="3" step="1" value="1">
+              <span class="size-label-icon size-label-max">A</span>
+            </div>
+          </div>
+        </div>
+
+
+
+        <div class="settings-group">
+          <div class="settings-group-title" data-i18n="socialGroupTitle">Социальные сети</div>
+
+          <div onclick="nativeOpenUrl('https://t.me/lapbase')" class="social-link-item">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Telegram_2019_Logo.svg" alt="Telegram" class="social-icon-img">
+            <span class="social-name" data-i18n="tgChannelLabel">Telegram-канал</span>
+            <span class="social-arrow">→</span>
+          </div>
+
+          <div onclick="nativeOpenUrl('https://t.me/lapbase?direct')" class="social-link-item">
+            <span class="social-icon">✉️</span>
+            <span class="social-name" data-i18n="contactDevLabel">Написать разработчику</span>
+            <span class="social-arrow">→</span>
+          </div>
+
+          <div onclick="nativeOpenUrl('https://teletype.in/@1k0na_inf/+last-asylum-plague')" class="social-link-item">
+            <img src="https://teletype.in/static/favicon.f39059fb.svg" alt="Teletype" class="social-icon-img">
+            <span class="social-name">Teletype</span>
+            <span class="social-arrow">→</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Плавающая кнопка поддержки -->
+  <button class="support-fab" id="supportFab" aria-label="Поддержать разработку">
+    $
+  </button>
+
+  <!-- Попап поддержки -->
+  <div class="popup-overlay" id="supportPopup">
+    <div class="popup-card">
+      <button class="popup-close" id="popupClose">✕</button>
+      <div class="popup-text" data-i18n="supportPopupText">
+        На развитие приложения
+      </div>
+      <div onclick="nativeOpenUrl('https://dalink.to/1k0ha_inf')" class="popup-btn" data-i18n="supportDevBtn">
+        💲 Поддержать разработку
+      </div>
+    </div>
+  </div>
+
+  <!-- iOS Floating Tab Bar -->
+  <div class="floating-nav-container">
+    <nav class="floating-nav" id="floatingNav">
+      <div class="nav-indicator" id="navIndicator"></div>
+      <button class="nav-btn active" onclick="switchTab('feed', this)">
+        <span class="nav-icon">📡</span>
+        <span class="nav-label" data-i18n="navFeed">Лента</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('guides', this)">
+        <span class="nav-icon">📖</span>
+        <span class="nav-label" data-i18n="navGuides">Гайды</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('calc', this)">
+        <span class="nav-icon">🧮</span>
+        <span class="nav-label" data-i18n="navCalc">Кальк.</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('time', this)">
+        <span class="nav-icon">🕒</span>
+        <span class="nav-label" data-i18n="navTime">Время</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab('settings', this)">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label" data-i18n="navSettings">Настройки</span>
+      </button>
+    </nav>
+  </div>
+</div>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
