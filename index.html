@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="./styles.css?v=tg-fullscreen-ui4-brand-row">
+  <link rel="stylesheet" href="./styles.css?v=1.0.6-liquid">
 </head>
 <body>
   <div class="liquid-bg">
@@ -36,18 +36,18 @@
         <div class="patch-title" data-i18n="patch101Title">Что нового в LAPBase</div>
         <div class="patch-changelog" id="patch101Changelog">
           <ul class="patch-list">
-            <li data-i18n="patch101Item1">Приложение теперь полноценно работает на весь экран внутри Telegram.</li>
-            <li data-i18n="patch101Item2">Исправили отступы сверху и снизу, чтобы кнопки Telegram больше не перекрывали интерфейс.</li>
-            <li data-i18n="patch101Item3">Обновили внешний вид: карточки, кнопки и поля стали удобнее и аккуратнее на телефоне.</li>
-            <li class="patch-extra" data-i18n="patch101Item4">Выбор зданий теперь листается вбок свайпом, как карточки в мобильных приложениях.</li>
-            <li class="patch-extra" data-i18n="patch101Item5">Итоги калькулятора стали заметнее, а ресурсы — проще для быстрого просмотра.</li>
-            <li class="patch-extra" data-i18n="patch101Item6">Нижнее меню подстроено под полный экран и стало удобнее для управления одной рукой.</li>
-            <li class="patch-extra" data-i18n="patch101Item7">Добавили лёгкий отклик при нажатиях, если Telegram и устройство это поддерживают.</li>
-            <li class="patch-extra" data-i18n="patch101Item8">Ссылки на Telegram и внешние страницы теперь открываются удобнее прямо из приложения.</li>
-            <li class="patch-extra" data-i18n="patch101Item9">Приложение лучше подстраивается под разные размеры экрана и поворот телефона.</li>
-            <li class="patch-extra" data-i18n="patch101Item10">Исправили положение логотипа LAPBase — теперь он не должен перекрываться кнопками Telegram.</li>
-            <li class="patch-extra" data-i18n="patch101Item11">В разделе гайдов оставили простую кнопку «На главную» для быстрого возврата к началу.</li>
-            <li class="patch-extra" data-i18n="patch101Item12">Добавили более плавные анимации и приятные эффекты при нажатиях.</li>
+            <li data-i18n="patch101Item1">Полноэкранный режим в Telegram стал аккуратнее: интерфейс лучше использует весь экран и не залезает под элементы Mini App.</li>
+            <li data-i18n="patch101Item2">Обновили внешний вид LAPBase — больше стекла, мягче панели и чище переходы между элементами.</li>
+            <li data-i18n="patch101Item3">В настройках появился выбор акцентного цвета. Он меняет оформление всего приложения.</li>
+            <li class="patch-extra" data-i18n="patch101Item4">Переработали карточки зданий в калькуляторе: на телефоне ими стало удобнее пользоваться и сравнивать уровни.</li>
+            <li class="patch-extra" data-i18n="patch101Item5">Добавили автоматический выбор русского или английского языка по настройкам Telegram. Язык по-прежнему можно сменить вручную.</li>
+            <li class="patch-extra" data-i18n="patch101Item6">Перевели названия зданий, настройки, подсказки и другие динамические элементы интерфейса.</li>
+            <li class="patch-extra" data-i18n="patch101Item7">Калькулятор лучше подстраивается под небольшие экраны, а итоговые ресурсы читаются заметнее.</li>
+            <li class="patch-extra" data-i18n="patch101Item8">Подправили верхнюю часть приложения и положение логотипа для fullscreen-режима.</li>
+            <li class="patch-extra" data-i18n="patch101Item9">Нижняя панель, кнопки, поля и карточки получили более цельный мобильный стиль.</li>
+            <li class="patch-extra" data-i18n="patch101Item10">В разделе гайдов оставили быстрый возврат «На главную».</li>
+            <li class="patch-extra" data-i18n="patch101Item11">Добавили нативный виброотклик Telegram там, где он поддерживается.</li>
+            <li class="patch-extra" data-i18n="patch101Item12">Исправили несколько мелочей в размерах, отступах и анимациях, чтобы приложение ощущалось стабильнее.</li>
           </ul>
         </div>
         <button type="button" class="patch-expand-btn" id="patch101Toggle" aria-expanded="false" onclick="togglePatch101()">
@@ -69,7 +69,7 @@
     <section id="guides" class="tab-content">
       <div class="section-title guides-title-row">
         <span data-i18n="guidesTitle">📖 База Знаний</span>
-        <div class="guides-actions" aria-label="Управление гайдами">
+        <div class="guides-actions" aria-label="Управление гайдами" data-i18n-aria-label="guidesActionsAria">
           <button type="button" class="title-badge guides-action-btn guides-home-btn" onclick="goGuidesHome()">
             <span data-i18n="guidesHomeBtn">На главную</span>
           </button>
@@ -82,7 +82,7 @@
                 src="https://teletype.in/@1k0na_inf/+last-asylum-plague?theme=dark"
                 class="teletype-frame"
                 scrolling="yes"
-                title="Teletype View">
+                title="База знаний LAPBase" data-i18n-title="guidesFrameTitle">
         </iframe>
       </div>
     </section>
@@ -105,7 +105,11 @@
         </div>
         <div class="calc-btn-group">
           <button class="calc-btn" id="calc-apply-def-btn" data-i18n="applyBtn">Применить</button>
-          <button class="calc-btn calc-btn-secondary" id="calc-select-all-btn" data-i18n="deselectAllBtn">Снять все</button>
+          <label class="toggle-label calc-select-toggle" for="calc-select-all-toggle">
+            <input type="checkbox" id="calc-select-all-toggle" checked>
+            <span class="toggle-custom"></span>
+            <span id="calc-select-all-label" data-i18n="deselectAllBtn">Снять все</span>
+          </label>
         </div>
       </div>
 
@@ -124,6 +128,7 @@
       </div>
 
       <div class="calc-buildings-header" data-i18n="selectBuildingsTitle">🏛️ Выбор зданий</div>
+      <div class="calc-swipe-hint" data-i18n="swipeBuildingsHint">Свайпни вбок →</div>
       <div id="calc-buildings-container" class="calc-buildings-list"></div>
 
       <div class="card-update total-card" style="margin-top: var(--spacing-unit);">
@@ -254,7 +259,23 @@
           </div>
         </div>
 
-
+        <div class="settings-group accent-settings-group">
+          <div class="settings-group-title" data-i18n="accentGroupTitle">Цвет интерфейса</div>
+          <div class="settings-item accent-setting-item">
+            <div class="settings-item-label">
+              <span class="icon">🎨</span>
+              <span data-i18n="accentColorLabel">Акцентный цвет</span>
+            </div>
+            <div class="accent-color-grid" role="group" aria-label="Выбор акцентного цвета" data-i18n-aria-label="accentGroupAria">
+              <button type="button" class="accent-color-btn active" data-accent="orange" onclick="setAccentColor('orange')" aria-pressed="true"><span class="accent-dot accent-orange"></span><span data-i18n="accentOrange">Оранжевый</span></button>
+              <button type="button" class="accent-color-btn" data-accent="blue" onclick="setAccentColor('blue')" aria-pressed="false"><span class="accent-dot accent-blue"></span><span data-i18n="accentBlue">Синий</span></button>
+              <button type="button" class="accent-color-btn" data-accent="green" onclick="setAccentColor('green')" aria-pressed="false"><span class="accent-dot accent-green"></span><span data-i18n="accentGreen">Зелёный</span></button>
+              <button type="button" class="accent-color-btn" data-accent="purple" onclick="setAccentColor('purple')" aria-pressed="false"><span class="accent-dot accent-purple"></span><span data-i18n="accentPurple">Фиолетовый</span></button>
+              <button type="button" class="accent-color-btn" data-accent="pink" onclick="setAccentColor('pink')" aria-pressed="false"><span class="accent-dot accent-pink"></span><span data-i18n="accentPink">Розовый</span></button>
+              <button type="button" class="accent-color-btn" data-accent="cyan" onclick="setAccentColor('cyan')" aria-pressed="false"><span class="accent-dot accent-cyan"></span><span data-i18n="accentCyan">Бирюзовый</span></button>
+            </div>
+          </div>
+        </div>
 
         <div class="settings-group">
           <div class="settings-group-title" data-i18n="socialGroupTitle">Социальные сети</div>
@@ -282,7 +303,7 @@
   </main>
 
   <!-- Плавающая кнопка поддержки -->
-  <button class="support-fab" id="supportFab" aria-label="Поддержать разработку">
+  <button class="support-fab" id="supportFab" aria-label="Поддержать разработку" data-i18n-aria-label="supportAria">
     $
   </button>
 
@@ -328,6 +349,6 @@
 </div>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="./app.js?v=tg-fullscreen-ui4-brand-row" defer></script>
+  <script src="./app.js?v=1.0.6-liquid" defer></script>
 </body>
 </html>
