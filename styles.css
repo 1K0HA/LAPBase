@@ -1341,8 +1341,8 @@
   --accent: #ff922b;
   --accent-bright: #ffb35f;
   --accent-deep: #ff6a00;
-  --accent-soft: rgba(255, 146, 43, 0.14);
-  --accent-glow: rgba(255, 125, 20, 0.28);
+  --accent-soft: color-mix(in srgb, var(--text-accent) 14%, transparent);
+  --accent-glow: color-mix(in srgb, var(--text-accent) 28%, transparent);
   --glass-edge: rgba(255,255,255,.12);
   --glass-top: rgba(255,255,255,.095);
   --glass-fill: rgba(22, 25, 36, .68);
@@ -1356,7 +1356,7 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(70% 45% at 50% -5%, rgba(255,146,43,.10), transparent 72%),
+    radial-gradient(70% 45% at 50% -5%, color-mix(in srgb, var(--text-accent) 10%, transparent), transparent 72%),
     linear-gradient(180deg, rgba(255,255,255,.015), transparent 32%, rgba(0,0,0,.12));
 }
 
@@ -1380,10 +1380,10 @@ header {
 }
 
 .app-title {
-  background: linear-gradient(115deg, #fff 5%, #ffd2aa 46%, var(--accent-bright) 75%, var(--accent-deep) 100%);
+  background: linear-gradient(115deg, #fff 5%, color-mix(in srgb, var(--accent-bright) 55%, white) 46%, var(--accent-bright) 75%, var(--accent-deep) 100%);
   -webkit-background-clip: text;
   background-clip: text;
-  filter: drop-shadow(0 4px 18px rgba(255,128,22,.16));
+  filter: drop-shadow(0 4px 18px color-mix(in srgb, var(--text-accent) 16%, transparent));
 }
 
 .section-title {
@@ -1428,7 +1428,7 @@ header {
   pointer-events: none;
   z-index: -1;
   background:
-    linear-gradient(135deg, rgba(255,255,255,.11), transparent 23%, transparent 73%, rgba(255,146,43,.025));
+    linear-gradient(135deg, rgba(255,255,255,.11), transparent 23%, transparent 73%, color-mix(in srgb, var(--text-accent) 2.5%, transparent));
   opacity: .9;
 }
 
@@ -1484,18 +1484,18 @@ header {
 .calc-field select:focus,
 .converter-card select:focus,
 .converter-card input:focus {
-  border-color: rgba(255,157,72,.72);
-  box-shadow: 0 0 0 4px rgba(255,146,43,.12), 0 10px 28px rgba(0,0,0,.22);
+  border-color: color-mix(in srgb, var(--text-accent) 72%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--text-accent) 12%, transparent), 0 10px 28px rgba(0,0,0,.22);
 }
 
 .calc-btn {
   min-height: 46px;
   background:
     linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03)),
-    linear-gradient(135deg, rgba(255,167,84,.92), rgba(255,105,0,.92));
-  border: 1px solid rgba(255,194,135,.3);
+    linear-gradient(135deg, color-mix(in srgb, var(--text-accent) 92%, transparent), color-mix(in srgb, var(--text-accent) 92%, transparent));
+  border: 1px solid color-mix(in srgb, var(--text-accent) 30%, transparent);
   box-shadow:
-    0 10px 28px rgba(255,104,0,.20),
+    0 10px 28px color-mix(in srgb, var(--text-accent) 20%, transparent),
     inset 0 1px 0 rgba(255,255,255,.24),
     inset 0 -1px 0 rgba(0,0,0,.12);
   text-shadow: 0 1px 4px rgba(0,0,0,.28);
@@ -1511,8 +1511,8 @@ header {
   min-height: 48px;
   background:
     linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.015)),
-    linear-gradient(135deg, rgba(255,146,43,.13), rgba(255,105,0,.055));
-  border: 1px solid rgba(255,160,74,.24);
+    linear-gradient(135deg, color-mix(in srgb, var(--text-accent) 13%, transparent), color-mix(in srgb, var(--text-accent) 5.5%, transparent));
+  border: 1px solid color-mix(in srgb, var(--text-accent) 24%, transparent);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 10px 30px rgba(0,0,0,.20);
 }
 
@@ -1526,7 +1526,7 @@ header {
 }
 
 .building-tile.active:hover {
-  border-color: rgba(255,159,73,.23);
+  border-color: color-mix(in srgb, var(--text-accent) 23%, transparent);
 }
 
 .building-tile.disabled {
@@ -1542,8 +1542,8 @@ header {
 
 .building-tile.active .building-checkbox-custom {
   background: linear-gradient(135deg, var(--accent-bright), var(--accent-deep));
-  border-color: rgba(255,181,111,.5);
-  box-shadow: 0 5px 16px rgba(255,105,0,.27), inset 0 1px 0 rgba(255,255,255,.3);
+  border-color: color-mix(in srgb, var(--text-accent) 50%, transparent);
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--text-accent) 27%, transparent), inset 0 1px 0 rgba(255,255,255,.3);
 }
 
 .level-select { color: var(--accent-bright); }
@@ -1555,12 +1555,12 @@ header {
 
 .total-card {
   background:
-    radial-gradient(100% 110% at 0% 0%, rgba(255,166,83,.14), transparent 55%),
-    radial-gradient(90% 95% at 100% 100%, rgba(255,90,0,.07), transparent 58%),
+    radial-gradient(100% 110% at 0% 0%, color-mix(in srgb, var(--text-accent) 14%, transparent), transparent 55%),
+    radial-gradient(90% 95% at 100% 100%, color-mix(in srgb, var(--text-accent) 7%, transparent), transparent 58%),
     linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,.015)),
     rgba(25,27,37,.79);
-  border-color: rgba(255,151,57,.24);
-  box-shadow: 0 22px 60px rgba(0,0,0,.44), 0 8px 34px rgba(255,100,0,.07), inset 0 1px 0 rgba(255,255,255,.09);
+  border-color: color-mix(in srgb, var(--text-accent) 24%, transparent);
+  box-shadow: 0 22px 60px rgba(0,0,0,.44), 0 8px 34px color-mix(in srgb, var(--text-accent) 7%, transparent), inset 0 1px 0 rgba(255,255,255,.09);
 }
 
 .total-header {
@@ -1581,10 +1581,10 @@ header {
   text-shadow: 0 3px 18px rgba(0,0,0,.32);
 }
 
-.total-item:nth-child(1) .total-icon { filter: drop-shadow(0 0 10px rgba(255,196,85,.22)); }
+.total-item:nth-child(1) .total-icon { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--text-accent) 22%, transparent)); }
 .total-item:nth-child(2) .total-icon { filter: drop-shadow(0 0 10px rgba(203,130,60,.18)); }
 .total-item:nth-child(3) .total-icon { filter: drop-shadow(0 0 10px rgba(83,220,120,.18)); }
-.total-item:nth-child(4) .total-icon { filter: drop-shadow(0 0 10px rgba(255,179,64,.22)); }
+.total-item:nth-child(4) .total-icon { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--text-accent) 22%, transparent)); }
 .total-item:nth-child(5) .total-icon { filter: drop-shadow(0 0 10px rgba(93,172,255,.18)); }
 
 .total-value.value-pop {
@@ -1604,8 +1604,8 @@ header {
 }
 
 .social-link-item:active {
-  border-color: rgba(255,151,57,.23);
-  background: linear-gradient(145deg, rgba(255,146,43,.075), rgba(255,255,255,.025));
+  border-color: color-mix(in srgb, var(--text-accent) 23%, transparent);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--text-accent) 7.5%, transparent), rgba(255,255,255,.025));
 }
 
 .floating-nav-container {
@@ -1644,29 +1644,29 @@ header {
   top: -48px;
   transform: translateX(-50%);
   border-radius: 50%;
-  background: rgba(255,146,43,.09);
+  background: color-mix(in srgb, var(--text-accent) 9%, transparent);
   filter: blur(22px);
   pointer-events: none;
 }
 
 .nav-indicator {
   background:
-    linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,146,43,.06)),
+    linear-gradient(180deg, rgba(255,255,255,.13), color-mix(in srgb, var(--text-accent) 6%, transparent)),
     rgba(255,255,255,.025);
   border-color: rgba(255,255,255,.11);
   box-shadow:
-    0 7px 20px rgba(255,100,0,.08),
+    0 7px 20px color-mix(in srgb, var(--text-accent) 8%, transparent),
     inset 0 1px 0 rgba(255,255,255,.09);
 }
 
 .nav-btn.active {
-  color: #ffad61;
-  text-shadow: 0 0 14px rgba(255,127,24,.24);
+  color: var(--accent-bright);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--text-accent) 24%, transparent);
 }
 
 .nav-btn.active .nav-icon {
   transform: translateY(-1px) scale(1.13);
-  filter: drop-shadow(0 4px 10px rgba(255,124,20,.28));
+  filter: drop-shadow(0 4px 10px color-mix(in srgb, var(--text-accent) 28%, transparent));
 }
 
 .nav-btn:active .nav-icon { transform: scale(.92); }
@@ -1677,13 +1677,13 @@ header {
     rgba(24,27,37,.78);
   border: 1px solid rgba(255,255,255,.13);
   color: var(--accent-bright);
-  box-shadow: 0 16px 42px rgba(0,0,0,.48), 0 6px 24px rgba(255,109,0,.10), inset 0 1px 0 rgba(255,255,255,.11);
-  text-shadow: 0 0 16px rgba(255,127,24,.30);
+  box-shadow: 0 16px 42px rgba(0,0,0,.48), 0 6px 24px color-mix(in srgb, var(--text-accent) 10%, transparent), inset 0 1px 0 rgba(255,255,255,.11);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--text-accent) 30%, transparent);
 }
 
 .popup-card {
   background:
-    radial-gradient(90% 80% at 50% 0%, rgba(255,146,43,.10), transparent 60%),
+    radial-gradient(90% 80% at 50% 0%, color-mix(in srgb, var(--text-accent) 10%, transparent), transparent 60%),
     linear-gradient(145deg, rgba(255,255,255,.08), rgba(255,255,255,.02)),
     rgba(20,23,33,.92);
   border: 1px solid rgba(255,255,255,.13);
@@ -1692,10 +1692,10 @@ header {
 
 .popup-btn {
   background: linear-gradient(135deg, var(--accent-bright), var(--accent-deep));
-  box-shadow: 0 12px 34px rgba(255,105,0,.27), inset 0 1px 0 rgba(255,255,255,.25);
+  box-shadow: 0 12px 34px color-mix(in srgb, var(--text-accent) 27%, transparent), inset 0 1px 0 rgba(255,255,255,.25);
 }
 
-.popup-btn:active { background: linear-gradient(135deg, #ff9e42, #f35f00); }
+.popup-btn:active { background: linear-gradient(135deg, var(--accent-bright), var(--accent-deep)); }
 
 .toggle-label input:checked + .toggle-custom {
   background: linear-gradient(135deg, #52d46c, #27b44b);
@@ -1764,10 +1764,10 @@ header {
   margin-bottom: 10px;
 }
 
-.calc-buildings-header::after {
-  content: "Свайпните вбок  →";
+.calc-swipe-hint {
   display: block;
-  margin-top: 4px;
+  margin-top: -6px;
+  margin-bottom: 10px;
   font-size: calc(var(--small-text) * .9);
   font-weight: 500;
   color: rgba(255,255,255,.42);
@@ -1803,7 +1803,7 @@ header {
   padding: 18px;
   border-radius: 26px;
   background:
-    radial-gradient(115% 88% at 6% 0%, rgba(255,165,80,.12), transparent 48%),
+    radial-gradient(115% 88% at 6% 0%, color-mix(in srgb, var(--text-accent) 12%, transparent), transparent 48%),
     radial-gradient(90% 70% at 100% 100%, rgba(75,98,255,.07), transparent 58%),
     linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.018)),
     rgba(22,24,34,.84);
@@ -1821,7 +1821,7 @@ header {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(130deg, rgba(255,255,255,.075), transparent 28%, transparent 72%, rgba(255,146,43,.035));
+  background: linear-gradient(130deg, rgba(255,255,255,.075), transparent 28%, transparent 72%, color-mix(in srgb, var(--text-accent) 3.5%, transparent));
   pointer-events: none;
 }
 
@@ -1833,14 +1833,14 @@ header {
   right: -52px;
   top: -48px;
   border-radius: 50%;
-  background: rgba(255,146,43,.13);
+  background: color-mix(in srgb, var(--text-accent) 13%, transparent);
   filter: blur(28px);
   pointer-events: none;
 }
 
 .building-tile.active {
   opacity: 1;
-  border-color: rgba(255,171,89,.20);
+  border-color: color-mix(in srgb, var(--text-accent) 20%, transparent);
 }
 
 .building-tile.disabled {
@@ -1899,9 +1899,9 @@ header {
 }
 
 .building-tile.active .building-checkbox-custom {
-  background: linear-gradient(135deg, #ffad5c, #ff7100);
-  border-color: rgba(255,193,128,.65);
-  box-shadow: 0 6px 18px rgba(255,105,0,.28), inset 0 1px 0 rgba(255,255,255,.32);
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent-deep));
+  border-color: color-mix(in srgb, var(--text-accent) 65%, transparent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--text-accent) 28%, transparent), inset 0 1px 0 rgba(255,255,255,.32);
 }
 
 .building-tile-header {
@@ -1924,9 +1924,9 @@ header {
   border-radius: 17px;
   font-size: 25px;
   background:
-    linear-gradient(145deg, rgba(255,174,92,.17), rgba(255,112,0,.07)),
+    linear-gradient(145deg, color-mix(in srgb, var(--text-accent) 17%, transparent), color-mix(in srgb, var(--text-accent) 7%, transparent)),
     rgba(255,255,255,.035);
-  border: 1px solid rgba(255,174,92,.17);
+  border: 1px solid color-mix(in srgb, var(--text-accent) 17%, transparent);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 24px rgba(0,0,0,.20);
 }
 
@@ -1962,8 +1962,8 @@ header {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #ff922b;
-  box-shadow: 0 0 10px rgba(255,146,43,.6);
+  background: var(--text-accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--text-accent) 60%, transparent);
 }
 
 .building-levels-title,
@@ -2017,9 +2017,9 @@ header {
   line-height: 1.15;
   font-weight: 780;
   letter-spacing: -.3px;
-  color: #ffad5c;
+  color: var(--accent-bright);
   background-color: transparent;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23ffad5c' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23ffffff' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 1px center;
   border: 0;
@@ -2030,7 +2030,7 @@ header {
 .building-level-arrow {
   display: grid;
   place-items: center;
-  color: rgba(255,174,92,.65);
+  color: color-mix(in srgb, var(--text-accent) 65%, transparent);
   font-size: 18px;
   transform: translateY(6px);
 }
@@ -2313,8 +2313,8 @@ input,
   --lap-accent: #ff922b;
   --lap-accent-2: #ffb15c;
   --lap-accent-deep: #ff7417;
-  --lap-accent-soft: rgba(255,146,43,.13);
-  --lap-accent-line: rgba(255,146,43,.24);
+  --lap-accent-soft: color-mix(in srgb, var(--lap-accent) 13%, transparent);
+  --lap-accent-line: color-mix(in srgb, var(--lap-accent) 24%, transparent);
   --lap-tg-bg: var(--tg-theme-bg-color, #0b0d14);
   --lap-tg-secondary: var(--tg-theme-secondary-bg-color, #151821);
   --lap-tg-text: var(--tg-theme-text-color, #ffffff);
@@ -2339,7 +2339,7 @@ html.telegram-miniapp body {
 /* A calmer fullscreen background: immersive, but not visually noisy. */
 .telegram-miniapp .liquid-bg {
   background:
-    radial-gradient(90% 55% at 15% -5%, rgba(255,146,43,.16), transparent 58%),
+    radial-gradient(90% 55% at 15% -5%, color-mix(in srgb, var(--text-accent) 16%, transparent), transparent 58%),
     radial-gradient(70% 50% at 100% 15%, rgba(68,106,255,.10), transparent 64%),
     linear-gradient(180deg, #0a0c12 0%, var(--lap-tg-bg) 44%, #090b10 100%);
 }
@@ -2389,7 +2389,7 @@ html.telegram-miniapp body {
   border-radius: 999px;
   flex: 0 0 10px;
   background: linear-gradient(145deg, var(--lap-accent-2), var(--lap-accent-deep));
-  box-shadow: 0 0 0 5px rgba(255,146,43,.10), 0 0 18px rgba(255,146,43,.38);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--text-accent) 10%, transparent), 0 0 18px color-mix(in srgb, var(--text-accent) 38%, transparent);
 }
 
 /* Fullscreen content uses almost the entire device width. */
@@ -2454,12 +2454,19 @@ html.telegram-miniapp body {
 }
 
 .telegram-miniapp .badge-version,
-.telegram-miniapp .title-badge,
-.telegram-miniapp .size-value-badge {
+.telegram-miniapp .title-badge {
   border: 1px solid var(--lap-accent-line);
   background: var(--lap-accent-soft);
   color: var(--lap-accent-2);
   box-shadow: none;
+}
+
+.telegram-miniapp .size-value-badge {
+  border: none !important;
+  background: transparent !important;
+  color: var(--lap-accent-2);
+  box-shadow: none !important;
+  outline: none;
 }
 
 .telegram-miniapp .patch-welcome-text,
@@ -2488,18 +2495,18 @@ html.telegram-miniapp body {
 .telegram-miniapp .calc-field select:focus,
 .telegram-miniapp .converter-card select:focus,
 .telegram-miniapp .converter-card input:focus {
-  border-color: rgba(255,146,43,.54);
-  box-shadow: 0 0 0 3px rgba(255,146,43,.11);
+  border-color: color-mix(in srgb, var(--text-accent) 54%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent) 11%, transparent);
 }
 
 .telegram-miniapp .calc-btn {
   min-height: 48px;
   border-radius: 16px;
-  border: 1px solid rgba(255,183,100,.26);
+  border: 1px solid color-mix(in srgb, var(--text-accent) 26%, transparent);
   background: linear-gradient(145deg, var(--lap-accent-2), var(--lap-accent-deep));
   color: #160b02;
   font-weight: 760;
-  box-shadow: 0 8px 22px rgba(255,116,23,.17), inset 0 1px 0 rgba(255,255,255,.26);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--text-accent) 17%, transparent), inset 0 1px 0 rgba(255,255,255,.26);
 }
 
 .telegram-miniapp .calc-btn-secondary {
@@ -2540,13 +2547,13 @@ html.telegram-miniapp body {
 }
 
 .telegram-miniapp .building-tile.active {
-  border-color: rgba(255,146,43,.25);
+  border-color: color-mix(in srgb, var(--text-accent) 25%, transparent);
   box-shadow: 0 12px 34px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.06);
 }
 
 .telegram-miniapp .building-icon-shell {
-  background: linear-gradient(145deg, rgba(255,174,92,.16), rgba(255,116,23,.06));
-  border-color: rgba(255,146,43,.18);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--text-accent) 16%, transparent), color-mix(in srgb, var(--text-accent) 6%, transparent));
+  border-color: color-mix(in srgb, var(--text-accent) 18%, transparent);
 }
 
 .telegram-miniapp .building-stat,
@@ -2562,9 +2569,9 @@ html.telegram-miniapp body {
 /* Make the total card visually important without looking like a banner ad. */
 .telegram-miniapp .total-card {
   position: relative;
-  border-color: rgba(255,146,43,.20);
+  border-color: color-mix(in srgb, var(--text-accent) 20%, transparent);
   background:
-    radial-gradient(85% 130% at 100% 0%, rgba(255,146,43,.10), transparent 62%),
+    radial-gradient(85% 130% at 100% 0%, color-mix(in srgb, var(--text-accent) 10%, transparent), transparent 62%),
     linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012)),
     color-mix(in srgb, var(--lap-tg-secondary) 92%, transparent);
 }
@@ -2654,8 +2661,8 @@ html.telegram-miniapp body {
 .telegram-miniapp .nav-indicator {
   top: 5px;
   bottom: 5px;
-  border: 1px solid rgba(255,146,43,.13);
-  background: linear-gradient(180deg, rgba(255,146,43,.13), rgba(255,146,43,.055));
+  border: 1px solid color-mix(in srgb, var(--text-accent) 13%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--text-accent) 13%, transparent), color-mix(in srgb, var(--text-accent) 5.5%, transparent));
   box-shadow: inset 0 1px 0 rgba(255,255,255,.055);
 }
 
@@ -2685,7 +2692,7 @@ html.telegram-miniapp body {
 
 .telegram-miniapp .nav-btn.active .nav-icon {
   transform: translateY(-1px) scale(1.08);
-  filter: drop-shadow(0 2px 7px rgba(255,146,43,.22));
+  filter: drop-shadow(0 2px 7px color-mix(in srgb, var(--text-accent) 22%, transparent));
 }
 
 /* Support button becomes a small branded floating utility. */
@@ -2696,7 +2703,7 @@ html.telegram-miniapp body {
   bottom: calc(79px + var(--lap-safe-bottom));
   border-radius: 18px;
   font-size: 22px;
-  border: 1px solid rgba(255,146,43,.20);
+  border: 1px solid color-mix(in srgb, var(--text-accent) 20%, transparent);
   background: rgba(25,28,37,.90);
   color: var(--lap-accent-2);
   box-shadow: 0 10px 26px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.055);
@@ -2822,11 +2829,11 @@ html.telegram-miniapp body {
    ======================================================================== */
 :root {
   --tg-fullscreen-chrome-reserve: 0px;
-  --lap-brand-row-height: 54px;
+  --lap-brand-row-height: 48px;
 }
 
 .telegram-miniapp.tg-fullscreen {
-  --tg-fullscreen-chrome-reserve: max(var(--lap-safe-top), 88px);
+  --tg-fullscreen-chrome-reserve: max(var(--lap-safe-top), 54px);
 }
 
 .telegram-miniapp.tg-fullscreen header {
@@ -2864,8 +2871,8 @@ html.telegram-miniapp body {
 
 @media (orientation: landscape) {
   .telegram-miniapp.tg-fullscreen {
-    --tg-fullscreen-chrome-reserve: max(var(--lap-safe-top), 58px);
-    --lap-brand-row-height: 46px;
+    --tg-fullscreen-chrome-reserve: max(var(--lap-safe-top), 44px);
+    --lap-brand-row-height: 42px;
   }
 }
 
@@ -2911,7 +2918,7 @@ html.telegram-miniapp body {
   margin-bottom: 0;
   color: #101010;
   border-color: color-mix(in srgb, var(--text-accent) 80%, white 20%);
-  background: linear-gradient(135deg, #ffb15f, var(--text-accent));
+  background: linear-gradient(135deg, var(--accent-bright), var(--text-accent));
   box-shadow: 0 6px 18px color-mix(in srgb, var(--text-accent) 24%, transparent);
 }
 
@@ -3023,4 +3030,399 @@ html.telegram-miniapp body {
   .patch-card-head { align-items: flex-start; }
   .patch-status { font-size: calc(var(--small-text) * .9); }
   .patch-list { gap: 8px; }
+}
+
+
+/* ===== v1.0.2: compact fullscreen brand + accent selector ===== */
+.telegram-miniapp.tg-fullscreen header {
+  background: linear-gradient(180deg,
+    rgba(11,13,20,.96) 0,
+    rgba(11,13,20,.78) var(--tg-fullscreen-chrome-reserve),
+    rgba(11,13,20,.42) 100%);
+}
+
+.telegram-miniapp.tg-fullscreen .app-title {
+  font-size: clamp(20px, 5vw, 24px);
+}
+
+.accent-setting-item {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.accent-color-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  width: 100%;
+}
+
+.accent-color-btn {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 15px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--small-text);
+  font-weight: 600;
+  text-align: left;
+  transition: transform .18s var(--ease), border-color .18s, background .18s, box-shadow .18s;
+}
+
+.accent-color-btn:active { transform: scale(.97); }
+.accent-color-btn.active {
+  border-color: color-mix(in srgb, var(--text-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--text-accent) 11%, rgba(255,255,255,.035));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 0 3px color-mix(in srgb, var(--text-accent) 8%, transparent);
+}
+
+.accent-dot {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.42);
+  box-shadow: 0 2px 8px rgba(0,0,0,.28);
+}
+.accent-orange { background:#ff922b; }
+.accent-blue { background:#4d9cff; }
+.accent-green { background:#34c759; }
+.accent-purple { background:#a970ff; }
+.accent-pink { background:#ff5f9e; }
+.accent-cyan { background:#34cdd7; }
+
+/* Make the chosen accent propagate into the most visible branded surfaces. */
+.app-title {
+  background: linear-gradient(135deg, #fff 0%, var(--text-accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.blob { background: radial-gradient(circle, var(--text-accent) 0%, transparent 70%); }
+.nav-btn.active .nav-icon { filter: drop-shadow(0 0 10px color-mix(in srgb, var(--text-accent) 45%, transparent)); }
+.nav-indicator { box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 6px 20px color-mix(in srgb, var(--text-accent) 12%, transparent); }
+.building-tile.active .building-checkbox-custom,
+.toggle-converter-btn,
+.calc-btn:not(.calc-btn-secondary) { border-color: color-mix(in srgb, var(--text-accent) 34%, transparent); }
+
+@media (max-width: 380px) {
+  .accent-color-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== Accent color consistency fix =====
+   Every orange UI accent now follows the selected accent preset. */
+:root {
+  --accent-soft: color-mix(in srgb, var(--text-accent) 14%, transparent);
+  --accent-glow: color-mix(in srgb, var(--text-accent) 28%, transparent);
+  --lap-accent-soft: color-mix(in srgb, var(--lap-accent) 13%, transparent);
+  --lap-accent-line: color-mix(in srgb, var(--lap-accent) 24%, transparent);
+}
+
+.accent-color-btn.active {
+  border-color: color-mix(in srgb, var(--text-accent) 58%, transparent) !important;
+  background: color-mix(in srgb, var(--text-accent) 12%, rgba(255,255,255,.035)) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-accent) 10%, transparent) !important;
+}
+.accent-color-btn.active::after { background: var(--text-accent) !important; }
+
+
+/* ===== v1.0.5: clean text-size label ===== */
+.size-value-badge {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+
+/* ===== v1.0.6: iOS 27 Liquid Glass ===== */
+:root {
+  --liquid-surface: rgba(24, 27, 38, .54);
+  --liquid-surface-strong: rgba(31, 35, 48, .67);
+  --liquid-surface-soft: rgba(255, 255, 255, .045);
+  --liquid-edge: rgba(255, 255, 255, .15);
+  --liquid-highlight: rgba(255, 255, 255, .27);
+  --liquid-shadow: 0 18px 46px rgba(0,0,0,.34), 0 4px 18px rgba(0,0,0,.18);
+  --liquid-inset: inset 0 1px 0 rgba(255,255,255,.12), inset 0 -1px 0 rgba(255,255,255,.025);
+  --glass-blur: 28px;
+}
+
+/* Deeper content behind glass, without making the interface brighter. */
+.liquid-bg {
+  background:
+    radial-gradient(100% 70% at 50% -8%, color-mix(in srgb, var(--text-accent) 9%, transparent), transparent 62%),
+    radial-gradient(70% 55% at 105% 34%, rgba(79, 112, 255, .09), transparent 64%),
+    radial-gradient(70% 60% at -5% 82%, rgba(255, 76, 146, .055), transparent 66%),
+    linear-gradient(180deg, #07080d 0%, #0a0c13 48%, #07090f 100%);
+}
+.liquid-bg::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background: linear-gradient(115deg, rgba(255,255,255,.018), transparent 28%, rgba(255,255,255,.012) 62%, transparent);
+  opacity:.7;
+}
+.blob { opacity:.095; filter: blur(74px); }
+.blob-2 { opacity:.07; filter: blur(82px); }
+.blob-3 { opacity:.055; filter: blur(82px); }
+
+/* Glass is reserved for navigation and elevated/control surfaces. */
+header,
+.floating-nav,
+.popup-card,
+.card-update,
+.converter-card,
+.webview-card,
+.building-tile,
+.toggle-converter-btn,
+.social-link-item,
+.level-select-wrap,
+.size-slider-wrapper,
+.lang-selector-btn-group,
+.accent-color-btn {
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(155%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(155%);
+}
+
+.card-update,
+.converter-card,
+.webview-card,
+.building-tile {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.085), rgba(255,255,255,.018) 38%, rgba(255,255,255,.006) 72%),
+    var(--liquid-surface);
+  border: 1px solid var(--liquid-edge);
+  box-shadow: var(--liquid-shadow), var(--liquid-inset);
+  overflow: hidden;
+}
+.card-update::before,
+.converter-card::before,
+.webview-card::before,
+.building-tile::before {
+  content:"";
+  position:absolute;
+  inset:1px;
+  border-radius: inherit;
+  pointer-events:none;
+  background:
+    radial-gradient(110% 65% at 10% -12%, rgba(255,255,255,.18), transparent 42%),
+    linear-gradient(125deg, rgba(255,255,255,.055), transparent 32%, transparent 75%, color-mix(in srgb, var(--text-accent) 3%, transparent));
+  opacity:.74;
+  z-index:-1;
+}
+.card-update::after,
+.converter-card::after,
+.building-tile::after {
+  content:"";
+  position:absolute;
+  top:0;
+  left:14%;
+  right:14%;
+  height:1px;
+  background:linear-gradient(90deg, transparent, var(--liquid-highlight), transparent);
+  pointer-events:none;
+}
+
+/* Navigation: floating, rounded and optically separated from content. */
+.floating-nav-container { width:min(calc(100% - 20px), 550px); }
+.floating-nav {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.026) 43%, rgba(255,255,255,.012)),
+    rgba(23,26,36,.61);
+  border:1px solid rgba(255,255,255,.17);
+  box-shadow: 0 22px 58px rgba(0,0,0,.50), var(--liquid-inset);
+  overflow:hidden;
+}
+.floating-nav::before {
+  content:"";
+  position:absolute;
+  left:7%; right:7%; top:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.46),transparent);
+  pointer-events:none;
+}
+.floating-nav::after {
+  content:"";
+  position:absolute;
+  width:34%; height:100%;
+  left:33%; top:-54%;
+  border-radius:50%;
+  background:color-mix(in srgb, var(--text-accent) 10%, transparent);
+  filter:blur(24px);
+  pointer-events:none;
+}
+.nav-indicator {
+  background:
+    linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,.045) 54%, color-mix(in srgb, var(--text-accent) 7%, transparent));
+  border:1px solid rgba(255,255,255,.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 7px 22px color-mix(in srgb, var(--text-accent) 9%, transparent);
+}
+.nav-btn.active { color:var(--accent-bright); }
+.nav-btn.active .nav-icon { filter:drop-shadow(0 3px 12px color-mix(in srgb,var(--text-accent) 28%,transparent)); }
+
+/* Inputs and controls use a quieter translucent material. */
+.calc-field input,
+.calc-field select,
+.converter-card input,
+.converter-card select,
+.level-select-wrap,
+.size-slider-wrapper,
+.lang-selector-btn-group,
+.accent-color-btn {
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.022)), rgba(4,6,10,.24);
+  border:1px solid rgba(255,255,255,.11);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.065);
+}
+.calc-field input:focus,
+.calc-field select:focus,
+.converter-card input:focus,
+.converter-card select:focus {
+  border-color:color-mix(in srgb,var(--text-accent) 52%,rgba(255,255,255,.14));
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--text-accent) 10%,transparent), inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+/* Primary actions look like tinted glass instead of solid web buttons. */
+.calc-btn:not(.calc-btn-secondary),
+.popup-btn {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.23), rgba(255,255,255,.065) 48%, rgba(0,0,0,.04)),
+    color-mix(in srgb, var(--text-accent) 72%, rgba(20,22,29,.55));
+  border:1px solid color-mix(in srgb,var(--text-accent) 45%,rgba(255,255,255,.22));
+  box-shadow:0 12px 30px color-mix(in srgb,var(--text-accent) 16%,transparent), inset 0 1px 0 rgba(255,255,255,.25);
+}
+.calc-btn-secondary,
+.title-badge,
+.patch-expand-btn {
+  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.035));
+  border:1px solid rgba(255,255,255,.13);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+/* Select-all now uses the exact same iOS switch language as Full digits. */
+.calc-btn-group {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:nowrap;
+}
+.calc-btn-group .calc-btn { flex:1; }
+.calc-select-toggle {
+  flex:0 0 auto;
+  min-height:46px;
+  padding:8px 2px 8px 8px;
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:var(--text-secondary);
+}
+.calc-select-toggle #calc-select-all-label {
+  font-size:var(--small-text);
+  font-weight:600;
+  white-space:nowrap;
+  color:var(--text-secondary);
+}
+.calc-select-toggle .toggle-custom,
+.total-header .toggle-custom {
+  width:46px;
+  height:28px;
+  background:rgba(255,255,255,.13);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.calc-select-toggle .toggle-custom::after,
+.total-header .toggle-custom::after {
+  top:2px; left:2px;
+  width:22px; height:22px;
+  box-shadow:0 2px 7px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.7);
+}
+.calc-select-toggle input:checked + .toggle-custom,
+.total-header .toggle-label input:checked + .toggle-custom {
+  background:linear-gradient(145deg,var(--accent-bright),var(--text-accent));
+  border-color:color-mix(in srgb,var(--text-accent) 60%,rgba(255,255,255,.18));
+  box-shadow:0 4px 14px color-mix(in srgb,var(--text-accent) 20%,transparent), inset 0 1px 0 rgba(255,255,255,.23);
+}
+.calc-select-toggle input:checked + .toggle-custom::after,
+.total-header .toggle-label input:checked + .toggle-custom::after { transform:translateX(18px); }
+
+/* Building cards get specular edges and depth but remain readable. */
+.building-tile { box-shadow:0 18px 40px rgba(0,0,0,.30), var(--liquid-inset); }
+.building-tile.active { border-color:rgba(255,255,255,.17); }
+.building-tile.disabled { opacity:.36; filter:saturate(.55) brightness(.86); }
+.building-icon-shell {
+  background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.035));
+  border:1px solid rgba(255,255,255,.13);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 8px 22px rgba(0,0,0,.18);
+}
+
+/* Totals are an elevated tinted glass sheet. */
+.total-card {
+  background:
+    radial-gradient(120% 100% at 0% 0%, color-mix(in srgb,var(--text-accent) 14%,transparent),transparent 50%),
+    linear-gradient(145deg,rgba(255,255,255,.095),rgba(255,255,255,.018) 50%),
+    rgba(25,28,39,.59);
+  border-color:color-mix(in srgb,var(--text-accent) 24%,rgba(255,255,255,.11));
+  box-shadow:0 24px 58px rgba(0,0,0,.39),0 8px 30px color-mix(in srgb,var(--text-accent) 7%,transparent),var(--liquid-inset);
+}
+.total-item {
+  background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.02)),rgba(0,0,0,.10);
+  border:1px solid rgba(255,255,255,.085);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+/* Settings rows feel like grouped native sheets. */
+.settings-group { position:relative; }
+.social-link-item {
+  background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.02)),rgba(19,22,31,.38);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.055);
+}
+.accent-color-btn.active {
+  background:linear-gradient(145deg,color-mix(in srgb,var(--text-accent) 13%,rgba(255,255,255,.055)),rgba(255,255,255,.02)) !important;
+  border-color:color-mix(in srgb,var(--text-accent) 42%,rgba(255,255,255,.12)) !important;
+}
+
+/* Bottom sheet follows the same floating-material language. */
+.popup-overlay { background:rgba(0,0,0,.42); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+.popup-card {
+  background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.025)),rgba(27,30,41,.72);
+  border:1px solid rgba(255,255,255,.17);
+  box-shadow:0 30px 80px rgba(0,0,0,.55),var(--liquid-inset);
+}
+
+/* Motion should feel responsive, not floaty. */
+.card-update,
+.building-tile,
+.social-link-item,
+.calc-btn,
+.title-badge,
+.accent-color-btn {
+  transition:transform .20s cubic-bezier(.2,.75,.3,1), border-color .20s ease, background .20s ease, box-shadow .20s ease;
+}
+@media (hover:hover) and (pointer:fine) {
+  .card-update:hover { transform:translateY(-1px); }
+  .building-tile:hover { transform:translateY(-1px); }
+}
+.card-update:active,
+.building-tile:active,
+.social-link-item:active { transform:scale(.992); }
+
+@media (max-width:420px) {
+  .calc-btn-group { align-items:center; }
+  .calc-btn-group .calc-btn { min-width:0; padding-inline:16px; }
+  .calc-select-toggle { gap:7px; }
+  .calc-select-toggle #calc-select-all-label { max-width:88px; white-space:normal; line-height:1.15; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .blob { animation:none !important; }
 }
