@@ -286,6 +286,42 @@
       transform: scale(1.05);
     }
 
+    /* ===== Управление вкладкой гайдов ===== */
+    .guides-title-row {
+      flex-wrap: nowrap;
+    }
+
+    .guides-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .guides-action-btn {
+      appearance: none;
+      -webkit-appearance: none;
+      font-family: inherit;
+      line-height: 1;
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+    }
+
+    .guides-home-btn {
+      color: var(--text-accent);
+      border-color: color-mix(in srgb, var(--text-accent) 28%, transparent);
+      background: color-mix(in srgb, var(--text-accent) 9%, rgba(255,255,255,.06));
+    }
+
+
+    .guides-action-btn:active {
+      transform: scale(.94);
+    }
+
     /* Card */
     .card-update {
       background: var(--bg-card);
@@ -337,15 +373,38 @@
       -webkit-backdrop-filter: blur(12px);
     }
 
+    /* В режиме гайдов скролл принадлежит самому iframe, а не внешнему main.
+       Это надёжнее работает внутри Telegram/Android WebView. */
+    main.guides-mode {
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+
+    main.guides-mode #guides {
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .webview-card {
+      touch-action: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
     .teletype-frame {
-      position: absolute;
-      top: -65px;
+      position: relative;
+      display: block;
+      top: 0;
       left: 0;
       width: 100%;
-      height: calc(100% + 65px);
+      height: 100%;
+      min-height: 100%;
       border: none;
       background-color: #080a0f;
       color-scheme: dark;
+      touch-action: auto;
+      pointer-events: auto;
     }
 
     /* Конвертер времени */
@@ -1242,6 +1301,26 @@
     }
 
     @media (max-width: 480px) {
+      .guides-title-row {
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .guides-title-row > [data-i18n="guidesTitle"] {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .guides-actions {
+        gap: 4px;
+      }
+
+      .guides-action-btn {
+        min-height: 32px;
+        padding: 6px 9px;
+        font-size: 11px;
+      }
+
       .converter-card .row { flex-direction: column; align-items: stretch; gap: 12px; }
       .converter-card .result { flex-direction: column; align-items: flex-start; gap: 6px; }
       .settings-item { flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -1253,3 +1332,1695 @@
       .total-item-wide { grid-column: span 1; }
       .calc-buildings-list { max-height: 300px; }
     }
+
+/* =========================================================
+   LAPBase Premium Mobile UI — visual enhancement layer
+   Keeps existing markup/logic, upgrades depth and polish.
+   ========================================================= */
+:root {
+  --accent: #ff922b;
+  --accent-bright: #ffb35f;
+  --accent-deep: #ff6a00;
+  --accent-soft: rgba(255, 146, 43, 0.14);
+  --accent-glow: rgba(255, 125, 20, 0.28);
+  --glass-edge: rgba(255,255,255,.12);
+  --glass-top: rgba(255,255,255,.095);
+  --glass-fill: rgba(22, 25, 36, .68);
+  --premium-shadow: 0 18px 55px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.075);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(70% 45% at 50% -5%, rgba(255,146,43,.10), transparent 72%),
+    linear-gradient(180deg, rgba(255,255,255,.015), transparent 32%, rgba(0,0,0,.12));
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: .18;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.06'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+}
+
+.app-container { position: relative; z-index: 2; }
+
+header {
+  background: linear-gradient(180deg, rgba(12,14,21,.68), rgba(12,14,21,.38));
+  border-bottom: 1px solid rgba(255,255,255,.075);
+  box-shadow: 0 8px 28px rgba(0,0,0,.16);
+}
+
+.app-title {
+  background: linear-gradient(115deg, #fff 5%, #ffd2aa 46%, var(--accent-bright) 75%, var(--accent-deep) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 4px 18px rgba(255,128,22,.16));
+}
+
+.section-title {
+  position: relative;
+  text-shadow: 0 2px 18px rgba(0,0,0,.32);
+}
+
+.section-title::after {
+  content: "";
+  width: 42px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-bright), var(--accent-deep), transparent);
+  box-shadow: 0 0 18px var(--accent-glow);
+  position: absolute;
+  left: 0;
+  bottom: calc(var(--spacing-unit) * -.45);
+  opacity: .85;
+}
+
+.card-update,
+.converter-card,
+.building-tile,
+.webview-card {
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.065), rgba(255,255,255,.012) 38%),
+    var(--glass-fill);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--premium-shadow);
+}
+
+.card-update::before,
+.converter-card::before,
+.building-tile::before,
+.webview-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.11), transparent 23%, transparent 73%, rgba(255,146,43,.025));
+  opacity: .9;
+}
+
+.card-update::after,
+.converter-card::after,
+.building-tile::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent);
+  pointer-events: none;
+}
+
+.card-update:active,
+.building-tile:active,
+.social-link-item:active {
+  transform: scale(.988);
+}
+
+.badge-version,
+.title-badge {
+  background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
+  border: 1px solid rgba(255,255,255,.13);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 6px 18px rgba(0,0,0,.16);
+}
+
+.title-badge:active { transform: scale(.96); }
+
+.calc-group-title,
+.settings-group-title {
+  color: rgba(255,255,255,.58);
+  letter-spacing: .78px;
+}
+
+.calc-field input,
+.calc-field select,
+.converter-card select,
+.converter-card input,
+.level-select-wrap,
+.size-slider-wrapper,
+.lang-selector-btn-group {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)),
+    rgba(0,0,0,.22);
+  border-color: rgba(255,255,255,.105);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.calc-field input:focus,
+.calc-field select:focus,
+.converter-card select:focus,
+.converter-card input:focus {
+  border-color: rgba(255,157,72,.72);
+  box-shadow: 0 0 0 4px rgba(255,146,43,.12), 0 10px 28px rgba(0,0,0,.22);
+}
+
+.calc-btn {
+  min-height: 46px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03)),
+    linear-gradient(135deg, rgba(255,167,84,.92), rgba(255,105,0,.92));
+  border: 1px solid rgba(255,194,135,.3);
+  box-shadow:
+    0 10px 28px rgba(255,104,0,.20),
+    inset 0 1px 0 rgba(255,255,255,.24),
+    inset 0 -1px 0 rgba(0,0,0,.12);
+  text-shadow: 0 1px 4px rgba(0,0,0,.28);
+}
+
+.calc-btn-secondary {
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.025));
+  border-color: rgba(255,255,255,.11);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 8px 22px rgba(0,0,0,.18);
+}
+
+.toggle-converter-btn {
+  min-height: 48px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.015)),
+    linear-gradient(135deg, rgba(255,146,43,.13), rgba(255,105,0,.055));
+  border: 1px solid rgba(255,160,74,.24);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 10px 30px rgba(0,0,0,.20);
+}
+
+.building-tile {
+  overflow: hidden;
+  transition: transform .24s var(--spring), opacity .24s ease, border-color .24s ease, box-shadow .24s ease;
+}
+
+.building-tile.active {
+  border-color: rgba(255,255,255,.13);
+}
+
+.building-tile.active:hover {
+  border-color: rgba(255,159,73,.23);
+}
+
+.building-tile.disabled {
+  opacity: .34;
+  filter: saturate(.55);
+}
+
+.building-checkbox-custom {
+  background: rgba(255,255,255,.045);
+  border-color: rgba(255,255,255,.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.055);
+}
+
+.building-tile.active .building-checkbox-custom {
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent-deep));
+  border-color: rgba(255,181,111,.5);
+  box-shadow: 0 5px 16px rgba(255,105,0,.27), inset 0 1px 0 rgba(255,255,255,.3);
+}
+
+.level-select { color: var(--accent-bright); }
+
+.building-subtotals {
+  color: rgba(255,255,255,.62);
+  line-height: 1.55;
+}
+
+.total-card {
+  background:
+    radial-gradient(100% 110% at 0% 0%, rgba(255,166,83,.14), transparent 55%),
+    radial-gradient(90% 95% at 100% 100%, rgba(255,90,0,.07), transparent 58%),
+    linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,.015)),
+    rgba(25,27,37,.79);
+  border-color: rgba(255,151,57,.24);
+  box-shadow: 0 22px 60px rgba(0,0,0,.44), 0 8px 34px rgba(255,100,0,.07), inset 0 1px 0 rgba(255,255,255,.09);
+}
+
+.total-header {
+  font-size: calc(var(--text-size) * 1.05);
+}
+
+.total-item {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.018)),
+    rgba(0,0,0,.12);
+  border: 1px solid rgba(255,255,255,.07);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.total-value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.2px;
+  text-shadow: 0 3px 18px rgba(0,0,0,.32);
+}
+
+.total-item:nth-child(1) .total-icon { filter: drop-shadow(0 0 10px rgba(255,196,85,.22)); }
+.total-item:nth-child(2) .total-icon { filter: drop-shadow(0 0 10px rgba(203,130,60,.18)); }
+.total-item:nth-child(3) .total-icon { filter: drop-shadow(0 0 10px rgba(83,220,120,.18)); }
+.total-item:nth-child(4) .total-icon { filter: drop-shadow(0 0 10px rgba(255,179,64,.22)); }
+.total-item:nth-child(5) .total-icon { filter: drop-shadow(0 0 10px rgba(93,172,255,.18)); }
+
+.total-value.value-pop {
+  animation: valuePop .24s var(--spring);
+}
+
+@keyframes valuePop {
+  0% { opacity: .55; transform: translateY(2px) scale(.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.social-link-item {
+  min-height: 52px;
+  background: linear-gradient(145deg, rgba(255,255,255,.05), rgba(255,255,255,.018));
+  border: 1px solid rgba(255,255,255,.075);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.social-link-item:active {
+  border-color: rgba(255,151,57,.23);
+  background: linear-gradient(145deg, rgba(255,146,43,.075), rgba(255,255,255,.025));
+}
+
+.floating-nav-container {
+  width: min(calc(100% - 20px), 540px);
+}
+
+.floating-nav {
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.09), rgba(255,255,255,.025)),
+    rgba(25,28,38,.74);
+  border: 1px solid rgba(255,255,255,.13);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.56),
+    0 8px 28px rgba(0,0,0,.25),
+    inset 0 1px 0 rgba(255,255,255,.10);
+}
+
+.floating-nav::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.38), transparent);
+  pointer-events: none;
+}
+
+.floating-nav::after {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 70px;
+  left: 50%;
+  top: -48px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: rgba(255,146,43,.09);
+  filter: blur(22px);
+  pointer-events: none;
+}
+
+.nav-indicator {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,146,43,.06)),
+    rgba(255,255,255,.025);
+  border-color: rgba(255,255,255,.11);
+  box-shadow:
+    0 7px 20px rgba(255,100,0,.08),
+    inset 0 1px 0 rgba(255,255,255,.09);
+}
+
+.nav-btn.active {
+  color: #ffad61;
+  text-shadow: 0 0 14px rgba(255,127,24,.24);
+}
+
+.nav-btn.active .nav-icon {
+  transform: translateY(-1px) scale(1.13);
+  filter: drop-shadow(0 4px 10px rgba(255,124,20,.28));
+}
+
+.nav-btn:active .nav-icon { transform: scale(.92); }
+
+.support-fab {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.035)),
+    rgba(24,27,37,.78);
+  border: 1px solid rgba(255,255,255,.13);
+  color: var(--accent-bright);
+  box-shadow: 0 16px 42px rgba(0,0,0,.48), 0 6px 24px rgba(255,109,0,.10), inset 0 1px 0 rgba(255,255,255,.11);
+  text-shadow: 0 0 16px rgba(255,127,24,.30);
+}
+
+.popup-card {
+  background:
+    radial-gradient(90% 80% at 50% 0%, rgba(255,146,43,.10), transparent 60%),
+    linear-gradient(145deg, rgba(255,255,255,.08), rgba(255,255,255,.02)),
+    rgba(20,23,33,.92);
+  border: 1px solid rgba(255,255,255,.13);
+  box-shadow: 0 40px 110px rgba(0,0,0,.82), inset 0 1px 0 rgba(255,255,255,.10);
+}
+
+.popup-btn {
+  background: linear-gradient(135deg, var(--accent-bright), var(--accent-deep));
+  box-shadow: 0 12px 34px rgba(255,105,0,.27), inset 0 1px 0 rgba(255,255,255,.25);
+}
+
+.popup-btn:active { background: linear-gradient(135deg, #ff9e42, #f35f00); }
+
+.toggle-label input:checked + .toggle-custom {
+  background: linear-gradient(135deg, #52d46c, #27b44b);
+  box-shadow: 0 5px 15px rgba(52,199,89,.18), inset 0 1px 0 rgba(255,255,255,.2);
+}
+
+.ios-slider::-webkit-slider-thumb {
+  box-shadow: 0 5px 16px rgba(0,0,0,.48), 0 0 0 1px rgba(255,255,255,.18);
+}
+
+/* Mobile touch polish */
+@media (hover: none) {
+  .card-update:hover,
+  .title-badge:hover,
+  .social-link-item:hover,
+  .calc-btn-secondary:hover,
+  .toggle-converter-btn:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  main {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  .card-update,
+  .converter-card {
+    box-shadow: 0 14px 42px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.07);
+  }
+
+  .building-tile {
+    padding: 15px 16px;
+  }
+
+  .level-select-wrap {
+    min-height: 42px;
+  }
+
+  .total-item {
+    min-height: 56px;
+  }
+
+  .floating-nav {
+    padding: 5px;
+  }
+
+  .nav-indicator { top: 5px; bottom: 5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob { animation: none !important; }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ===== Mobile building carousel v2 ===== */
+.calc-buildings-header {
+  position: relative;
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+
+.calc-buildings-header::after {
+  content: "Свайпните вбок  →";
+  display: block;
+  margin-top: 4px;
+  font-size: calc(var(--small-text) * .9);
+  font-weight: 500;
+  color: rgba(255,255,255,.42);
+  letter-spacing: 0;
+}
+
+.calc-buildings-list {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  width: calc(100% + var(--spacing-unit));
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 0 var(--spacing-unit);
+  -webkit-overflow-scrolling: touch;
+  padding: 4px var(--spacing-unit) 16px 0;
+  margin-right: calc(var(--spacing-unit) * -1);
+  scrollbar-width: none;
+  touch-action: pan-x pan-y;
+}
+
+.calc-buildings-list::-webkit-scrollbar { display: none; }
+
+.building-tile {
+  flex: 0 0 min(84vw, 352px);
+  min-width: min(84vw, 352px);
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+  position: relative;
+  padding: 18px;
+  border-radius: 26px;
+  background:
+    radial-gradient(115% 88% at 6% 0%, rgba(255,165,80,.12), transparent 48%),
+    radial-gradient(90% 70% at 100% 100%, rgba(75,98,255,.07), transparent 58%),
+    linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.018)),
+    rgba(22,24,34,.84);
+  border: 1px solid rgba(255,255,255,.105);
+  box-shadow:
+    0 18px 42px rgba(0,0,0,.34),
+    inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+  overflow: hidden;
+  transform: translateZ(0);
+}
+
+.building-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(130deg, rgba(255,255,255,.075), transparent 28%, transparent 72%, rgba(255,146,43,.035));
+  pointer-events: none;
+}
+
+.building-tile::after {
+  content: "";
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  right: -52px;
+  top: -48px;
+  border-radius: 50%;
+  background: rgba(255,146,43,.13);
+  filter: blur(28px);
+  pointer-events: none;
+}
+
+.building-tile.active {
+  opacity: 1;
+  border-color: rgba(255,171,89,.20);
+}
+
+.building-tile.disabled {
+  opacity: .5;
+  filter: saturate(.55);
+  transform: none;
+}
+
+.building-tile.disabled .building-card-status::before { background: rgba(255,255,255,.28); box-shadow: none; }
+.building-tile.disabled .building-card-status { color: rgba(255,255,255,.35); }
+.building-tile.disabled .building-card-status::after { content: "Не выбрано"; }
+.building-tile.disabled .building-card-status { font-size: 0; }
+.building-tile.disabled .building-card-status::after { font-size: calc(var(--small-text) * .86); }
+
+.building-tile-topline {
+  position: relative;
+  z-index: 1;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.building-card-kicker {
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 1.25px;
+  color: rgba(255,255,255,.34);
+}
+
+.building-select-button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin: -5px -4px -5px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.building-select-button:active { transform: scale(.9); }
+
+.building-checkbox-custom {
+  width: 25px;
+  height: 25px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.055);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.building-tile.active .building-checkbox-custom {
+  background: linear-gradient(135deg, #ffad5c, #ff7100);
+  border-color: rgba(255,193,128,.65);
+  box-shadow: 0 6px 18px rgba(255,105,0,.28), inset 0 1px 0 rgba(255,255,255,.32);
+}
+
+.building-tile-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  min-height: 58px;
+  margin-bottom: 18px;
+}
+
+.building-icon-shell {
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 17px;
+  font-size: 25px;
+  background:
+    linear-gradient(145deg, rgba(255,174,92,.17), rgba(255,112,0,.07)),
+    rgba(255,255,255,.035);
+  border: 1px solid rgba(255,174,92,.17);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 24px rgba(0,0,0,.20);
+}
+
+.building-title-wrap {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.building-name {
+  width: 100%;
+  font-size: calc(var(--text-size) * 1.05);
+  line-height: 1.18;
+  font-weight: 750;
+  letter-spacing: -.25px;
+  color: #fff;
+  overflow-wrap: anywhere;
+}
+
+.building-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: calc(var(--small-text) * .86);
+  color: rgba(255,255,255,.48);
+  white-space: nowrap;
+}
+
+.building-card-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff922b;
+  box-shadow: 0 0 10px rgba(255,146,43,.6);
+}
+
+.building-levels-title,
+.building-summary-label {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 7px;
+  font-size: calc(var(--small-text) * .82);
+  font-weight: 650;
+  color: rgba(255,255,255,.39);
+  letter-spacing: .15px;
+}
+
+.building-controls {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 22px minmax(0,1fr);
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 18px;
+}
+
+.level-select-wrap {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-height: 66px;
+  padding: 9px 11px 8px;
+  border-radius: 16px;
+  background: rgba(0,0,0,.19);
+  border: 1px solid rgba(255,255,255,.075);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+}
+
+.level-select-label {
+  font-size: 10px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: .55px;
+  color: rgba(255,255,255,.34);
+}
+
+.level-select {
+  width: 100%;
+  min-height: 30px;
+  padding: 0 16px 0 0;
+  font-size: 20px;
+  line-height: 1.15;
+  font-weight: 780;
+  letter-spacing: -.3px;
+  color: #ffad5c;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23ffad5c' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1px center;
+  border: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.building-level-arrow {
+  display: grid;
+  place-items: center;
+  color: rgba(255,174,92,.65);
+  font-size: 18px;
+  transform: translateY(6px);
+}
+
+.building-summary-label { margin-top: 1px; }
+
+.building-subtotals {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.building-stat {
+  min-width: 0;
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border-radius: 13px;
+  background: rgba(255,255,255,.035);
+  border: 1px solid rgba(255,255,255,.055);
+}
+
+.building-stat.time { grid-column: 1 / -1; }
+
+.building-stat-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.building-stat-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: calc(var(--small-text) * .92);
+  line-height: 1.15;
+  font-weight: 700;
+  color: rgba(255,255,255,.82);
+}
+
+.building-stat.time .building-stat-value {
+  white-space: normal;
+}
+
+@media (min-width: 600px) {
+  .building-tile {
+    flex-basis: 340px;
+    min-width: 340px;
+  }
+}
+
+@media (max-width: 480px) {
+  .calc-buildings-list {
+    max-height: none;
+    gap: 10px;
+    padding-bottom: 14px;
+  }
+
+  .building-tile {
+    flex-basis: min(86vw, 342px);
+    min-width: min(86vw, 342px);
+    padding: 17px;
+    border-radius: 24px;
+  }
+
+  .building-icon-shell {
+    width: 50px;
+    height: 50px;
+    flex-basis: 50px;
+  }
+}
+
+
+/* ========================================================================
+   TELEGRAM MINI APP — FULLSCREEN / SAFE AREA ADAPTATION
+   Uses Telegram CSS variables when available and browser env() as fallback.
+   ======================================================================== */
+:root {
+  --app-height: 100dvh;
+  --lap-safe-top: var(--lap-js-safe-top, max(
+    env(safe-area-inset-top, 0px),
+    var(--tg-content-safe-area-inset-top, 0px),
+    var(--tg-safe-area-inset-top, 0px)
+  ));
+  --lap-safe-bottom: var(--lap-js-safe-bottom, max(
+    env(safe-area-inset-bottom, 0px),
+    var(--tg-content-safe-area-inset-bottom, 0px),
+    var(--tg-safe-area-inset-bottom, 0px)
+  ));
+  --lap-safe-left: var(--lap-js-safe-left, max(
+    env(safe-area-inset-left, 0px),
+    var(--tg-content-safe-area-inset-left, 0px),
+    var(--tg-safe-area-inset-left, 0px)
+  ));
+  --lap-safe-right: var(--lap-js-safe-right, max(
+    env(safe-area-inset-right, 0px),
+    var(--tg-content-safe-area-inset-right, 0px),
+    var(--tg-safe-area-inset-right, 0px)
+  ));
+  --lap-edge-gap: 12px;
+}
+
+html,
+body {
+  width: 100%;
+  height: var(--app-height, var(--tg-viewport-stable-height, 100dvh));
+  min-height: var(--app-height, var(--tg-viewport-stable-height, 100dvh));
+  max-height: var(--app-height, var(--tg-viewport-stable-height, 100dvh));
+  overscroll-behavior: none;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+.app-container {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Header lives below Telegram/system overlay in real fullscreen. */
+header {
+  box-sizing: border-box;
+  padding-top: var(--lap-safe-top);
+  padding-left: max(var(--spacing-unit), var(--lap-safe-left));
+  padding-right: max(var(--spacing-unit), var(--lap-safe-right));
+  height: calc(var(--header-height) + var(--lap-safe-top));
+  min-height: calc(var(--header-height) + var(--lap-safe-top));
+  flex: 0 0 calc(var(--header-height) + var(--lap-safe-top));
+}
+
+/* Main uses one scroll surface; bottom reserve always clears floating tab bar. */
+main {
+  width: 100%;
+  max-width: 780px;
+  min-height: 0;
+  padding-top: var(--spacing-unit);
+  padding-left: max(var(--spacing-unit), calc(var(--lap-safe-left) + var(--lap-edge-gap)));
+  padding-right: max(var(--spacing-unit), calc(var(--lap-safe-right) + var(--lap-edge-gap)));
+  padding-bottom: calc(var(--tab-height) + 34px + var(--lap-safe-bottom));
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-padding-bottom: calc(var(--tab-height) + 34px + var(--lap-safe-bottom));
+}
+
+/* Guides get the remaining fullscreen height while iframe owns vertical gestures. */
+main.guides-mode {
+  padding-bottom: calc(var(--tab-height) + 24px + var(--lap-safe-bottom));
+}
+
+main.guides-mode #guides,
+#guides.tab-content.active,
+.webview-card,
+.teletype-frame {
+  min-height: 0;
+}
+
+/* Floating navigation follows Telegram content safe area, not raw viewport edge. */
+.floating-nav-container {
+  left: calc(50% + (var(--lap-safe-left) - var(--lap-safe-right)) / 2);
+  bottom: calc(10px + var(--lap-safe-bottom));
+  width: min(
+    calc(100% - var(--lap-safe-left) - var(--lap-safe-right) - 20px),
+    540px
+  );
+}
+
+.support-fab {
+  right: max(14px, calc(var(--lap-safe-right) + 14px));
+  bottom: calc(var(--tab-height) + 24px + var(--lap-safe-bottom));
+}
+
+.popup-overlay {
+  padding-top: max(24px, calc(var(--lap-safe-top) + 16px));
+  padding-right: max(20px, calc(var(--lap-safe-right) + 16px));
+  padding-bottom: max(24px, calc(var(--lap-safe-bottom) + 16px));
+  padding-left: max(20px, calc(var(--lap-safe-left) + 16px));
+}
+
+/* Fullscreen has a transparent Telegram header; keep our top surface opaque enough
+   for readable status/header controls while preserving the liquid-glass look. */
+.telegram-miniapp.tg-fullscreen header {
+  background:
+    linear-gradient(180deg, rgba(11,13,20,.94), rgba(11,13,20,.60)),
+    rgba(11,13,20,.64);
+}
+
+/* Keep the LAPBase mark comfortably below Telegram's fullscreen chrome.
+   The main safe-area comes from contentSafeAreaInset; this extra 6px is visual breathing room. */
+.telegram-miniapp.tg-fullscreen .app-title {
+  transform: translateY(3px);
+}
+
+.telegram-miniapp.tg-fullscreen .liquid-bg {
+  inset:
+    calc(var(--tg-safe-area-inset-top, 0px) * -1)
+    calc(var(--tg-safe-area-inset-right, 0px) * -1)
+    calc(var(--tg-safe-area-inset-bottom, 0px) * -1)
+    calc(var(--tg-safe-area-inset-left, 0px) * -1);
+}
+
+/* Avoid accidental text zoom and keep controls comfortably tappable in WebView. */
+button,
+select,
+input,
+.social-link-item,
+.building-title-wrap {
+  touch-action: manipulation;
+}
+
+@media (max-width: 480px) {
+  :root { --lap-edge-gap: 10px; }
+
+  main {
+    padding-left: max(12px, calc(var(--lap-safe-left) + 10px));
+    padding-right: max(12px, calc(var(--lap-safe-right) + 10px));
+  }
+
+  .floating-nav-container {
+    width: calc(100% - var(--lap-safe-left) - var(--lap-safe-right) - 16px);
+  }
+
+  .calc-buildings-list {
+    width: calc(100% + 12px);
+    margin-right: -12px;
+    padding-right: 12px;
+  }
+
+  .building-tile {
+    flex-basis: min(86vw, 352px);
+    min-width: min(86vw, 352px);
+  }
+}
+
+/* Landscape fullscreen: preserve content area instead of letting chrome dominate it. */
+@media (orientation: landscape) and (max-height: 620px) {
+  .app-size-small,
+  .app-size-medium,
+  .app-size-large,
+  .app-size-xlarge {
+    --header-height: 46px;
+    --tab-height: 52px;
+  }
+
+  header .app-title {
+    font-size: min(var(--title-size), 20px);
+  }
+
+  main {
+    padding-top: 10px;
+    padding-bottom: calc(var(--tab-height) + 20px + var(--lap-safe-bottom));
+  }
+
+  .floating-nav-container {
+    bottom: calc(6px + var(--lap-safe-bottom));
+  }
+
+  .support-fab {
+    bottom: calc(var(--tab-height) + 14px + var(--lap-safe-bottom));
+  }
+}
+
+/* ========================================================================
+   LAPBASE — TELEGRAM FULLSCREEN VISUAL SYSTEM v2
+   Mobile-first visual layer for Telegram Mini Apps.
+   ======================================================================== */
+:root {
+  --lap-accent: #ff922b;
+  --lap-accent-2: #ffb15c;
+  --lap-accent-deep: #ff7417;
+  --lap-accent-soft: rgba(255,146,43,.13);
+  --lap-accent-line: rgba(255,146,43,.24);
+  --lap-tg-bg: var(--tg-theme-bg-color, #0b0d14);
+  --lap-tg-secondary: var(--tg-theme-secondary-bg-color, #151821);
+  --lap-tg-text: var(--tg-theme-text-color, #ffffff);
+  --lap-tg-hint: var(--tg-theme-hint-color, rgba(255,255,255,.56));
+  --lap-tg-section: var(--tg-theme-section-bg-color, rgba(24,27,37,.90));
+  --lap-tg-separator: var(--tg-theme-section-separator-color, rgba(255,255,255,.075));
+  --lap-screen-pad: clamp(14px, 4vw, 22px);
+  --lap-card-radius: 22px;
+  --lap-control-radius: 16px;
+  --lap-nav-radius: 26px;
+}
+
+html.telegram-miniapp,
+html.telegram-miniapp body {
+  background: var(--lap-tg-bg);
+}
+
+.telegram-miniapp body {
+  color: var(--lap-tg-text);
+}
+
+/* A calmer fullscreen background: immersive, but not visually noisy. */
+.telegram-miniapp .liquid-bg {
+  background:
+    radial-gradient(90% 55% at 15% -5%, rgba(255,146,43,.16), transparent 58%),
+    radial-gradient(70% 50% at 100% 15%, rgba(68,106,255,.10), transparent 64%),
+    linear-gradient(180deg, #0a0c12 0%, var(--lap-tg-bg) 44%, #090b10 100%);
+}
+
+.telegram-miniapp .blob {
+  opacity: .065;
+  filter: blur(82px);
+  animation-duration: 34s;
+}
+.telegram-miniapp .blob-2 { opacity: .055; }
+.telegram-miniapp .blob-3 { opacity: .04; }
+
+/* Compact native-like top app bar. */
+.telegram-miniapp header {
+  position: relative;
+  z-index: 80;
+  justify-content: flex-start;
+  height: calc(52px + var(--lap-safe-top));
+  min-height: calc(52px + var(--lap-safe-top));
+  flex-basis: calc(52px + var(--lap-safe-top));
+  padding-top: var(--lap-safe-top);
+  padding-left: max(var(--lap-screen-pad), calc(var(--lap-safe-left) + var(--lap-screen-pad)));
+  padding-right: max(var(--lap-screen-pad), calc(var(--lap-safe-right) + var(--lap-screen-pad)));
+  background: linear-gradient(180deg, rgba(9,11,17,.92), rgba(9,11,17,.58) 72%, transparent);
+  border-bottom: 0;
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+}
+
+.telegram-miniapp .app-title {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -.45px;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: var(--lap-tg-text);
+}
+
+.telegram-miniapp .app-title::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: 0 0 10px;
+  background: linear-gradient(145deg, var(--lap-accent-2), var(--lap-accent-deep));
+  box-shadow: 0 0 0 5px rgba(255,146,43,.10), 0 0 18px rgba(255,146,43,.38);
+}
+
+/* Fullscreen content uses almost the entire device width. */
+.telegram-miniapp main {
+  max-width: 860px;
+  padding-top: 4px;
+  padding-left: max(var(--lap-screen-pad), calc(var(--lap-safe-left) + var(--lap-screen-pad)));
+  padding-right: max(var(--lap-screen-pad), calc(var(--lap-safe-right) + var(--lap-screen-pad)));
+  padding-bottom: calc(82px + var(--lap-safe-bottom));
+  scroll-padding-top: 10px;
+  scroll-padding-bottom: calc(94px + var(--lap-safe-bottom));
+}
+
+.telegram-miniapp .tab-content.active {
+  gap: 0;
+}
+
+.telegram-miniapp .section-title {
+  position: relative;
+  margin: 6px 0 16px;
+  padding: 0;
+  min-height: 38px;
+  font-size: clamp(24px, 6vw, 29px);
+  font-weight: 760;
+  line-height: 1.12;
+  letter-spacing: -.65px;
+  color: var(--lap-tg-text);
+}
+
+.telegram-miniapp .section-title::after {
+  display: none;
+}
+
+/* Telegram-like section surfaces instead of desktop cards. */
+.telegram-miniapp .card-update,
+.telegram-miniapp .converter-card,
+.telegram-miniapp .total-card {
+  border-radius: var(--lap-card-radius);
+  border: 1px solid rgba(255,255,255,.075);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012)),
+    color-mix(in srgb, var(--lap-tg-secondary) 90%, transparent);
+  box-shadow:
+    0 10px 30px rgba(0,0,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.055);
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  padding: clamp(16px, 4.5vw, 21px);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.telegram-miniapp .card-update::before,
+.telegram-miniapp .converter-card::before,
+.telegram-miniapp .total-card::before {
+  opacity: .45;
+}
+
+.telegram-miniapp .card-update::after,
+.telegram-miniapp .converter-card::after {
+  display: none;
+}
+
+.telegram-miniapp .badge-version,
+.telegram-miniapp .title-badge,
+.telegram-miniapp .size-value-badge {
+  border: 1px solid var(--lap-accent-line);
+  background: var(--lap-accent-soft);
+  color: var(--lap-accent-2);
+  box-shadow: none;
+}
+
+.telegram-miniapp .patch-welcome-text,
+.telegram-miniapp .hint,
+.telegram-miniapp .calc-field label,
+.telegram-miniapp .converter-card .field label,
+.telegram-miniapp .settings-group-title,
+.telegram-miniapp .total-label {
+  color: var(--lap-tg-hint);
+}
+
+/* Inputs: 48px+ touch height and Telegram-like inner surface. */
+.telegram-miniapp .calc-field input,
+.telegram-miniapp .calc-field select,
+.telegram-miniapp .converter-card select,
+.telegram-miniapp .converter-card input {
+  min-height: 50px;
+  border-radius: var(--lap-control-radius);
+  border: 1px solid rgba(255,255,255,.075);
+  background: rgba(0,0,0,.20);
+  color: var(--lap-tg-text);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.018);
+}
+
+.telegram-miniapp .calc-field input:focus,
+.telegram-miniapp .calc-field select:focus,
+.telegram-miniapp .converter-card select:focus,
+.telegram-miniapp .converter-card input:focus {
+  border-color: rgba(255,146,43,.54);
+  box-shadow: 0 0 0 3px rgba(255,146,43,.11);
+}
+
+.telegram-miniapp .calc-btn {
+  min-height: 48px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,183,100,.26);
+  background: linear-gradient(145deg, var(--lap-accent-2), var(--lap-accent-deep));
+  color: #160b02;
+  font-weight: 760;
+  box-shadow: 0 8px 22px rgba(255,116,23,.17), inset 0 1px 0 rgba(255,255,255,.26);
+}
+
+.telegram-miniapp .calc-btn-secondary {
+  background: rgba(255,255,255,.055);
+  border-color: rgba(255,255,255,.085);
+  color: var(--lap-tg-text);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+/* Calculator horizontal carousel becomes a first-class mobile component. */
+.telegram-miniapp .calc-buildings-header {
+  margin-top: 14px;
+  margin-bottom: 11px;
+  font-size: 20px;
+  font-weight: 720;
+  letter-spacing: -.35px;
+}
+
+.telegram-miniapp .calc-buildings-list {
+  width: calc(100% + var(--lap-screen-pad));
+  margin-right: calc(var(--lap-screen-pad) * -1);
+  gap: 11px;
+  padding: 2px var(--lap-screen-pad) 16px 1px;
+  scroll-padding-left: 1px;
+  scroll-padding-right: var(--lap-screen-pad);
+}
+
+.telegram-miniapp .building-tile {
+  flex-basis: min(84vw, 355px);
+  min-width: min(84vw, 355px);
+  border-radius: 24px;
+  padding: 17px;
+  background:
+    linear-gradient(155deg, rgba(255,255,255,.045), rgba(255,255,255,.012) 45%),
+    color-mix(in srgb, var(--lap-tg-secondary) 93%, transparent);
+  border: 1px solid rgba(255,255,255,.075);
+  box-shadow: 0 12px 34px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+.telegram-miniapp .building-tile.active {
+  border-color: rgba(255,146,43,.25);
+  box-shadow: 0 12px 34px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.telegram-miniapp .building-icon-shell {
+  background: linear-gradient(145deg, rgba(255,174,92,.16), rgba(255,116,23,.06));
+  border-color: rgba(255,146,43,.18);
+}
+
+.telegram-miniapp .building-stat,
+.telegram-miniapp .level-select-wrap,
+.telegram-miniapp .total-item,
+.telegram-miniapp .converter-card .result,
+.telegram-miniapp .social-link-item,
+.telegram-miniapp .size-slider-wrapper {
+  background: rgba(255,255,255,.035);
+  border-color: rgba(255,255,255,.065);
+}
+
+/* Make the total card visually important without looking like a banner ad. */
+.telegram-miniapp .total-card {
+  position: relative;
+  border-color: rgba(255,146,43,.20);
+  background:
+    radial-gradient(85% 130% at 100% 0%, rgba(255,146,43,.10), transparent 62%),
+    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012)),
+    color-mix(in srgb, var(--lap-tg-secondary) 92%, transparent);
+}
+
+.telegram-miniapp .total-value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.25px;
+}
+
+/* Settings become grouped iOS/Telegram style rows. */
+.telegram-miniapp .settings-group {
+  margin-bottom: 18px;
+}
+
+.telegram-miniapp .settings-group-title {
+  padding: 0 5px;
+  margin-bottom: 7px;
+  font-size: 11px;
+  letter-spacing: .65px;
+}
+
+.telegram-miniapp .settings-item {
+  min-height: 54px;
+  padding: 12px 2px;
+  border-color: var(--lap-tg-separator);
+}
+
+.telegram-miniapp .social-link-item {
+  min-height: 54px;
+  margin-bottom: 7px;
+  border-radius: 17px;
+  padding: 12px 14px;
+  transform: none !important;
+}
+
+/* Guides: use fullscreen space; controls stay compact above the webview. */
+.telegram-miniapp #guides.active {
+  min-height: 0;
+}
+
+.telegram-miniapp .guides-title-row {
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+
+.telegram-miniapp .guides-actions {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.telegram-miniapp .guides-action-btn {
+  min-height: 36px;
+  padding: 7px 13px;
+  border-radius: 13px;
+}
+
+.telegram-miniapp .webview-card {
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.075);
+  background: #080a0f;
+  box-shadow: 0 10px 28px rgba(0,0,0,.20);
+}
+
+/* Bottom navigation: close to Telegram's bottom chrome, but branded. */
+.telegram-miniapp .floating-nav-container {
+  bottom: calc(8px + var(--lap-safe-bottom));
+  width: min(calc(100% - var(--lap-safe-left) - var(--lap-safe-right) - 16px), 610px);
+}
+
+.telegram-miniapp .floating-nav {
+  height: 64px;
+  min-height: 64px;
+  padding: 5px;
+  border-radius: var(--lap-nav-radius);
+  border: 1px solid rgba(255,255,255,.085);
+  background: rgba(19,22,30,.88);
+  box-shadow: 0 14px 38px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.055);
+  backdrop-filter: blur(28px) saturate(155%);
+  -webkit-backdrop-filter: blur(28px) saturate(155%);
+}
+
+.telegram-miniapp .floating-nav::before {
+  opacity: .5;
+}
+.telegram-miniapp .floating-nav::after { display: none; }
+
+.telegram-miniapp .nav-indicator {
+  top: 5px;
+  bottom: 5px;
+  border: 1px solid rgba(255,146,43,.13);
+  background: linear-gradient(180deg, rgba(255,146,43,.13), rgba(255,146,43,.055));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.055);
+}
+
+.telegram-miniapp .nav-btn {
+  min-width: 0;
+  gap: 3px;
+  color: var(--lap-tg-hint);
+}
+
+.telegram-miniapp .nav-btn .nav-icon {
+  font-size: 21px;
+  filter: grayscale(.15);
+}
+
+.telegram-miniapp .nav-btn .nav-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: -.08px;
+}
+
+.telegram-miniapp .nav-btn.active {
+  color: var(--lap-accent-2);
+}
+
+.telegram-miniapp .nav-btn.active .nav-icon {
+  transform: translateY(-1px) scale(1.08);
+  filter: drop-shadow(0 2px 7px rgba(255,146,43,.22));
+}
+
+/* Support button becomes a small branded floating utility. */
+.telegram-miniapp .support-fab {
+  width: 48px;
+  height: 48px;
+  right: max(14px, calc(var(--lap-safe-right) + 14px));
+  bottom: calc(79px + var(--lap-safe-bottom));
+  border-radius: 18px;
+  font-size: 22px;
+  border: 1px solid rgba(255,146,43,.20);
+  background: rgba(25,28,37,.90);
+  color: var(--lap-accent-2);
+  box-shadow: 0 10px 26px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.055);
+}
+
+/* Mobile bottom sheet instead of a desktop centered modal. */
+.telegram-miniapp .popup-overlay {
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 max(8px, var(--lap-safe-right)) max(8px, var(--lap-safe-bottom)) max(8px, var(--lap-safe-left));
+  background: rgba(0,0,0,.52);
+}
+
+.telegram-miniapp .popup-card {
+  width: min(100%, 620px);
+  max-width: none;
+  padding: 28px 20px 20px;
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,.09);
+  background: rgba(25,28,38,.97);
+  box-shadow: 0 -12px 42px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.055);
+  animation: lapSheetIn .34s var(--ease);
+}
+
+.telegram-miniapp .popup-card::before {
+  content: "";
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: 38px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(255,255,255,.20);
+}
+
+@keyframes lapSheetIn {
+  from { opacity: 0; transform: translateY(36px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Disable desktop hover lift inside Telegram's touch WebView. */
+.telegram-miniapp .card-update:hover,
+.telegram-miniapp .building-tile:hover,
+.telegram-miniapp .social-link-item:hover,
+.telegram-miniapp .title-badge:hover {
+  transform: none;
+}
+
+.telegram-miniapp button:active,
+.telegram-miniapp .social-link-item:active,
+.telegram-miniapp .building-title-wrap:active {
+  opacity: .82;
+}
+
+/* Small phones: increase density without shrinking touch targets. */
+@media (max-width: 390px) {
+  :root {
+    --lap-screen-pad: 12px;
+    --lap-card-radius: 20px;
+  }
+
+  .telegram-miniapp .section-title {
+    font-size: 23px;
+    margin-bottom: 13px;
+  }
+
+  .telegram-miniapp .card-update,
+  .telegram-miniapp .converter-card,
+  .telegram-miniapp .total-card {
+    padding: 15px;
+  }
+
+  .telegram-miniapp .building-tile {
+    flex-basis: 86vw;
+    min-width: 86vw;
+    padding: 15px;
+  }
+
+  .telegram-miniapp .floating-nav {
+    height: 61px;
+    min-height: 61px;
+  }
+
+  .telegram-miniapp .nav-btn .nav-icon { font-size: 20px; }
+  .telegram-miniapp .nav-btn .nav-label { font-size: 9.5px; }
+}
+
+/* Fullscreen landscape: use two columns for control cards where possible. */
+@media (orientation: landscape) and (min-width: 700px) and (max-height: 620px) {
+  .telegram-miniapp main {
+    max-width: 980px;
+    padding-left: max(18px, calc(var(--lap-safe-left) + 18px));
+    padding-right: max(18px, calc(var(--lap-safe-right) + 18px));
+  }
+
+  .telegram-miniapp #calc.active {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 12px;
+    align-items: start;
+  }
+
+  .telegram-miniapp #calc > .section-title,
+  .telegram-miniapp #calc > .calc-buildings-header,
+  .telegram-miniapp #calc > .calc-buildings-list,
+  .telegram-miniapp #calc > .total-card {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .telegram-miniapp .blob { animation: none !important; }
+  .telegram-miniapp .popup-card { animation: none !important; }
+}
+
+
+/* ========================================================================
+   TELEGRAM FULLSCREEN — DEDICATED TOP CHROME RESERVE
+   Telegram fullscreen controls can visually occupy more space than some
+   clients report through contentSafeAreaInset. Keep the LAPBase brand in a
+   separate row below that chrome instead of trying to place it inside it.
+   ======================================================================== */
+:root {
+  --tg-fullscreen-chrome-reserve: 0px;
+  --lap-brand-row-height: 54px;
+}
+
+.telegram-miniapp.tg-fullscreen {
+  --tg-fullscreen-chrome-reserve: max(var(--lap-safe-top), 88px);
+}
+
+.telegram-miniapp.tg-fullscreen header {
+  padding-top: var(--tg-fullscreen-chrome-reserve);
+  height: calc(var(--tg-fullscreen-chrome-reserve) + var(--lap-brand-row-height));
+  min-height: calc(var(--tg-fullscreen-chrome-reserve) + var(--lap-brand-row-height));
+  flex-basis: calc(var(--tg-fullscreen-chrome-reserve) + var(--lap-brand-row-height));
+  align-items: flex-start;
+  justify-content: center;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 13, 20, .98) 0,
+    rgba(11, 13, 20, .92) var(--tg-fullscreen-chrome-reserve),
+    rgba(11, 13, 20, .58) 100%
+  );
+}
+
+.telegram-miniapp.tg-fullscreen .app-title {
+  height: var(--lap-brand-row-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: none;
+  line-height: 1;
+}
+
+/* In non-fullscreen Telegram and ordinary browsers, retain the original
+   compact header and rely on the real safe area. */
+.telegram-miniapp:not(.tg-fullscreen) header {
+  padding-top: var(--lap-safe-top);
+  height: calc(var(--header-height) + var(--lap-safe-top));
+  min-height: calc(var(--header-height) + var(--lap-safe-top));
+  flex-basis: calc(var(--header-height) + var(--lap-safe-top));
+}
+
+@media (orientation: landscape) {
+  .telegram-miniapp.tg-fullscreen {
+    --tg-fullscreen-chrome-reserve: max(var(--lap-safe-top), 58px);
+    --lap-brand-row-height: 46px;
+  }
+}
+
+
+/* ===== Feed / v1.0.1 changelog ===== */
+.patch-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.patch-card-latest {
+  border-color: color-mix(in srgb, var(--text-accent) 32%, rgba(255,255,255,.08));
+  background:
+    radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--text-accent) 13%, transparent), transparent 52%),
+    var(--bg-card);
+}
+
+.patch-card-latest::after {
+  content: "";
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  right: -70px;
+  top: -80px;
+  border-radius: 50%;
+  background: var(--text-accent);
+  filter: blur(55px);
+  opacity: .12;
+  pointer-events: none;
+}
+
+.patch-card-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.badge-version-latest {
+  margin-bottom: 0;
+  color: #101010;
+  border-color: color-mix(in srgb, var(--text-accent) 80%, white 20%);
+  background: linear-gradient(135deg, #ffb15f, var(--text-accent));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--text-accent) 24%, transparent);
+}
+
+.patch-status {
+  font-size: var(--small-text);
+  color: var(--text-accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.patch-title {
+  position: relative;
+  z-index: 1;
+  font-size: calc(var(--text-size) * 1.12);
+  line-height: 1.3;
+  font-weight: 750;
+  letter-spacing: -.2px;
+  margin-bottom: 12px;
+}
+
+.patch-changelog {
+  position: relative;
+  z-index: 1;
+}
+
+.patch-list {
+  list-style: none;
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+}
+
+.patch-list li {
+  position: relative;
+  padding-left: 20px;
+  color: var(--text-secondary);
+  font-size: var(--small-text);
+  line-height: 1.42;
+}
+
+.patch-list li::before {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: .58em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--text-accent) 45%, transparent);
+}
+
+.patch-extra {
+  display: none;
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.patch-card.expanded .patch-extra {
+  display: list-item;
+  animation: patchItemIn .28s var(--ease) forwards;
+}
+
+@keyframes patchItemIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.patch-expand-btn {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  background: rgba(255,255,255,.045);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--small-text);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.patch-expand-btn:active {
+  transform: scale(.98);
+  background: rgba(255,255,255,.08);
+  border-color: color-mix(in srgb, var(--text-accent) 28%, rgba(255,255,255,.08));
+}
+
+.patch-expand-arrow {
+  color: var(--text-accent);
+  font-size: 18px;
+  line-height: 1;
+  transition: transform .28s var(--spring);
+}
+
+.patch-card.expanded .patch-expand-arrow {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 420px) {
+  .patch-card-head { align-items: flex-start; }
+  .patch-status { font-size: calc(var(--small-text) * .9); }
+  .patch-list { gap: 8px; }
+}
