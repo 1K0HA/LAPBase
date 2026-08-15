@@ -969,7 +969,17 @@
     return getBrowserFallbackLanguage();
   }
 
-  let currentLang = detectNativeLanguage();
+  // Remember the last language that was actually confirmed by Telegram.
+  // Telegram clients can temporarily expose empty initData/language_code while
+  // a Mini App is being deactivated/reactivated. In that case we must keep the
+  // already confirmed Telegram language instead of falling back to the browser
+  // locale (which can be different from the Telegram UI language).
+  const initialTelegramLanguageCode = getTelegramLanguageCode();
+  let lastConfirmedTelegramAppLanguage = initialTelegramLanguageCode
+    ? telegramLanguageToAppLanguage(initialTelegramLanguageCode)
+    : null;
+
+  let currentLang = lastConfirmedTelegramAppLanguage || detectNativeLanguage();
 
   function setAppLanguage(lang, vibrate = true, options = {}) {
     if (!i18n[lang]) return;
@@ -1050,12 +1060,25 @@
     if (!isTelegramMiniAppContext()) return false;
 
     const tgLang = getTelegramLanguageCode();
-    const telegramAppLang = tgLang
-      ? telegramLanguageToAppLanguage(tgLang)
-      : getBrowserFallbackLanguage();
 
-    // force=true is intentional: it also repairs DOM text if an older cached
-    // build initialized the same currentLang value without translating the UI.
+    // Only a real Telegram language_code is allowed to replace the remembered
+    // session language. When Telegram temporarily returns no user/language data
+    // during minimize/restore, keep the last confirmed Telegram language.
+    if (tgLang) {
+      lastConfirmedTelegramAppLanguage = telegramLanguageToAppLanguage(tgLang);
+    }
+
+    const telegramAppLang = lastConfirmedTelegramAppLanguage;
+    if (!telegramAppLang) {
+      // Telegram has not supplied language_code yet. Do not use browser locale
+      // here: a Russian browser with an English Telegram UI would incorrectly
+      // switch the app to Russian on activation/visibilitychange. The startup
+      // polling below will retry when Telegram data becomes available.
+      return false;
+    }
+
+    // force=true also repairs translated DOM text after a resumed WebView, but
+    // always using the confirmed Telegram language for this Mini App session.
     if (force || telegramAppLang !== currentLang) {
       setAppLanguage(telegramAppLang, false, { persist: false });
     }
@@ -1069,6 +1092,7 @@
     return {
       inTelegramMiniApp: isTelegramMiniAppContext(),
       telegramLanguageCode: getTelegramLanguageCode() || null,
+      lastConfirmedTelegramAppLanguage: lastConfirmedTelegramAppLanguage || null,
       telegramPlatform: tg?.platform || null,
       browserLanguage: (navigator.languages && navigator.languages[0]) || navigator.language || null,
       currentAppLanguage: currentLang,
