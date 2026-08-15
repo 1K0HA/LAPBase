@@ -27,7 +27,7 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="./styles.css?v=1.0.25-fullscreen-header">
+  <link rel="stylesheet" href="./styles.css?v=1.0.24-support-settings-v5.76">
 </head>
 <body>
   <svg class="ui-icon-sprite" aria-hidden="true" focusable="false">
@@ -64,9 +64,6 @@
   <header>
     <div class="header-brand-row">
       <div class="app-title">LAPBase</div>
-      <button type="button" class="support-fab support-header-btn" id="supportFab" aria-label="Поддержать разработку" data-i18n-aria-label="supportAria" title="Поддержать разработку" data-i18n-title="supportAria">
-        <svg class="ui-icon" aria-hidden="true"><use href="#icon-dollar"></use></svg>
-      </button>
     </div>
   </header>
 
@@ -488,6 +485,16 @@
         </div>
 
         <div class="settings-group">
+          <div class="settings-group-title" data-i18n="supportGroupTitle">Поддержка</div>
+
+          <button type="button" class="social-link-item" id="supportFab" aria-label="Поддержать разработку" data-i18n-aria-label="supportAria" title="Поддержать разработку" data-i18n-title="supportAria">
+            <span class="social-icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true"><use href="#icon-dollar"></use></svg></span>
+            <span class="social-name" data-i18n="supportDevBtn">Поддержать разработку</span>
+            <span class="social-arrow" aria-hidden="true"><svg class="ui-icon" aria-hidden="true"><use href="#icon-chevron-right"></use></svg></span>
+          </button>
+        </div>
+
+        <div class="settings-group">
           <div class="settings-group-title" data-i18n="socialGroupTitle">Социальные сети</div>
 
           <button type="button" onclick="nativeOpenUrl('https://t.me/lapbase')" class="social-link-item">
@@ -566,6 +573,6 @@
   </div>
 
   <script src="./calculator-math.js?v=1.0.20-full-numbers-scroll-fix" defer></script>
-  <script src="./app.js?v=1.0.25-fullscreen-header" defer></script>
+  <script src="./app.js?v=1.0.27-support-settings-v5.76" defer></script>
 </body>
 </html>

@@ -687,6 +687,7 @@
       guideImageOpenOriginal: "Оригинал",
       guideImageClose: "Закрыть",
       supportAria: "Поддержать разработку",
+      supportGroupTitle: "Поддержка",
       socialGroupTitle: "Социальные сети",
       tgChannelLabel: "Telegram-канал",
       contactDevLabel: "Написать разработчику",
@@ -844,6 +845,7 @@
       guideImageOpenOriginal: "Original",
       guideImageClose: "Close",
       supportAria: "Support development",
+      supportGroupTitle: "Support",
       socialGroupTitle: "Social Links",
       tgChannelLabel: "Telegram Channel",
       contactDevLabel: "Contact Developer",
@@ -965,6 +967,32 @@
   window.togglePatch101 = function() {
     togglePatchCard('patch-v101', 'patch101Toggle');
   };
+
+  function initPatchCardClickToggles() {
+    const patchCards = [
+      ['patch-v102', 'patch102Toggle'],
+      ['patch-v101', 'patch101Toggle']
+    ];
+
+    patchCards.forEach(([cardId, buttonId]) => {
+      const card = document.getElementById(cardId);
+      if (!card || card.dataset.cardToggleReady === 'true') return;
+
+      card.dataset.cardToggleReady = 'true';
+      card.addEventListener('click', event => {
+        // Interactive controls keep their own behavior and must not toggle the card twice.
+        if (event.target.closest('button, a, input, textarea, select, [contenteditable="true"]')) return;
+
+        // Do not collapse/expand when the user is selecting changelog text.
+        const selection = typeof window.getSelection === 'function' ? window.getSelection() : null;
+        if (selection && !selection.isCollapsed) return;
+
+        togglePatchCard(cardId, buttonId);
+      });
+    });
+  }
+
+  initPatchCardClickToggles();
 
   function switchTab(tabId, element) {
     const targetTab = document.getElementById(tabId);

@@ -237,12 +237,13 @@ header {
 }
 
 .header-brand-row {
-  width: min(100%, 920px);
+  width: max-content;
+  max-width: 100%;
   margin-inline: auto;
   min-height: var(--ui-building-title-slot);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: var(--space-3);
 }
 
@@ -355,6 +356,13 @@ main.guides-mode {
 /* -------------------------------------------------------------------------- */
 #feed { max-width: 760px; margin-inline:auto; }
 .patch-card { overflow:hidden; }
+#patch-v102,
+#patch-v101 {
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+#patch-v102 .patch-expand-btn,
+#patch-v101 .patch-expand-btn { cursor:pointer; }
 .patch-card-latest { position:relative; }
 .patch-card-latest::before {
   content:"";
@@ -1133,7 +1141,7 @@ body.guide-lightbox-open { overflow:hidden; }
 
 @media (min-width: 1024px) {
   main { width:min(100%,1040px); padding-inline:max(var(--space-8),calc(var(--safe-left) + var(--space-8))) max(var(--space-8),calc(var(--safe-right) + var(--space-8))); }
-  .header-brand-row { width:min(100%,1040px); }
+  .header-brand-row { width:max-content; max-width:100%; }
   #calc { max-width:960px; }
 }
 
