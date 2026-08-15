@@ -44,6 +44,221 @@
   }
 
 
+  // ===== APPEARANCE / THEME =====
+  // Modes: auto = Telegram colorScheme/themeParams (or OS outside Telegram), light, dark.
+  const APP_THEME_STORAGE_KEY = 'appThemeMode';
+  const APP_THEME_MODES = new Set(['auto', 'light', 'dark']);
+  let currentThemeMode = (() => {
+    const saved = localStorage.getItem(APP_THEME_STORAGE_KEY);
+    return APP_THEME_MODES.has(saved) ? saved : 'auto';
+  })();
+  let currentThemePalette = null;
+
+  function getTelegramColorScheme() {
+    const tg = window.Telegram && window.Telegram.WebApp;
+    const scheme = tg && String(tg.colorScheme || '').toLowerCase();
+    return scheme === 'light' || scheme === 'dark' ? scheme : null;
+  }
+
+  function getEnvironmentColorScheme() {
+    const telegramScheme = getTelegramColorScheme();
+    if (telegramScheme) return telegramScheme;
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) return 'light';
+    } catch (_) {}
+    return 'dark';
+  }
+
+  function getEffectiveAppTheme(mode = currentThemeMode) {
+    return mode === 'light' || mode === 'dark' ? mode : getEnvironmentColorScheme();
+  }
+
+  function getBuiltInThemePalette(theme) {
+    if (theme === 'light') {
+      return {
+        bg: '#f3f6fb',
+        secondary: '#ffffff',
+        section: '#ffffff',
+        header: '#f7f9fd',
+        bottom: '#f8faff',
+        text: '#171b24',
+        hint: '#697184',
+        subtitle: '#7b8392',
+        sectionHeader: '#5d6678',
+        separator: '#d8dee8',
+        destructive: '#d64545'
+      };
+    }
+    return {
+      bg: '#0b0d14',
+      secondary: '#161922',
+      section: '#1a1e29',
+      header: '#0b0d14',
+      bottom: '#121620',
+      text: '#ffffff',
+      hint: '#9ca3b3',
+      subtitle: '#858d9d',
+      sectionHeader: '#a8afbd',
+      separator: '#2a3040',
+      destructive: '#ff5c5c'
+    };
+  }
+
+  function getEffectiveThemePalette(mode = currentThemeMode, effectiveTheme = getEffectiveAppTheme(mode)) {
+    const base = getBuiltInThemePalette(effectiveTheme);
+    const tg = window.Telegram && window.Telegram.WebApp;
+    const tp = tg && tg.themeParams;
+
+    // Only Auto mirrors Telegram's actual custom theme colors. Manual Day/Night
+    // intentionally stays on LAPBase's own palette even if Telegram uses another theme.
+    if (mode !== 'auto' || !tp) return base;
+
+    return {
+      bg: tp.bg_color || base.bg,
+      secondary: tp.secondary_bg_color || base.secondary,
+      section: tp.section_bg_color || tp.secondary_bg_color || base.section,
+      header: tp.header_bg_color || tp.bg_color || base.header,
+      bottom: tp.bottom_bar_bg_color || tp.secondary_bg_color || tp.bg_color || base.bottom,
+      text: tp.text_color || base.text,
+      hint: tp.hint_color || base.hint,
+      subtitle: tp.subtitle_text_color || tp.hint_color || base.subtitle,
+      sectionHeader: tp.section_header_text_color || tp.hint_color || base.sectionHeader,
+      separator: tp.section_separator_color || base.separator,
+      destructive: tp.destructive_text_color || base.destructive
+    };
+  }
+
+  function applyThemeCssVars(palette) {
+    currentThemePalette = palette;
+    const root = document.documentElement;
+    const vars = {
+      '--theme-bg': palette.bg,
+      '--theme-secondary': palette.secondary,
+      '--theme-section': palette.section,
+      '--theme-header': palette.header,
+      '--theme-bottom': palette.bottom,
+      '--theme-text': palette.text,
+      '--theme-hint': palette.hint,
+      '--theme-subtitle': palette.subtitle,
+      '--theme-section-header': palette.sectionHeader,
+      '--theme-separator': palette.separator,
+      '--theme-destructive': palette.destructive,
+
+      // Compatibility variables used by older visual layers.
+      '--lap-tg-bg': palette.bg,
+      '--lap-tg-secondary': palette.secondary,
+      '--lap-tg-section': palette.section,
+      '--lap-tg-text': palette.text,
+      '--lap-tg-hint': palette.hint,
+      '--lap-tg-separator': palette.separator,
+      '--bg-primary': palette.bg,
+      '--bg-secondary': palette.secondary,
+      '--text-primary': palette.text,
+      '--text-secondary': palette.hint
+    };
+    Object.entries(vars).forEach(([name, value]) => root.style.setProperty(name, value));
+  }
+
+  function updateThemeControls() {
+    const effectiveTheme = getEffectiveAppThemeThemeSafe();
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      const active = btn.dataset.themeMode === currentThemeMode;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+
+    const hint = document.getElementById('themeSettingHint');
+    // i18n/currentLang are declared later in this file. The first theme apply
+    // runs before those lexical bindings are initialized, so guard the lookup.
+    let themeCopy = null;
+    try {
+      if (i18n && currentLang && i18n[currentLang]) themeCopy = i18n[currentLang];
+    } catch (_) {}
+    if (hint && themeCopy) {
+      if (currentThemeMode === 'auto') {
+        hint.textContent = effectiveTheme === 'light'
+          ? themeCopy.themeAutoLightHint
+          : themeCopy.themeAutoDarkHint;
+      } else {
+        hint.textContent = currentThemeMode === 'light'
+          ? themeCopy.themeLightHint
+          : themeCopy.themeDarkHint;
+      }
+    }
+  }
+
+  // Safe helper avoids any dependency on i18n initialization during early startup.
+  function getEffectiveAppThemeThemeSafe() {
+    return getEffectiveAppTheme(currentThemeMode);
+  }
+
+  function updateThemeMeta(effectiveTheme, palette = currentThemePalette) {
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) metaTheme.setAttribute('content', (palette && palette.bg) || (effectiveTheme === 'light' ? '#f3f6fb' : '#0b0d14'));
+    const root = document.documentElement;
+    root.style.colorScheme = effectiveTheme;
+  }
+
+  function applyAppTheme(mode = currentThemeMode, options = {}) {
+    const { persist = true, vibrate = false, syncChrome = true } = options;
+    if (!APP_THEME_MODES.has(mode)) mode = 'auto';
+    currentThemeMode = mode;
+    if (persist) localStorage.setItem(APP_THEME_STORAGE_KEY, mode);
+
+    const effectiveTheme = getEffectiveAppTheme(mode);
+    const palette = getEffectiveThemePalette(mode, effectiveTheme);
+    const root = document.documentElement;
+    root.dataset.themeMode = mode;
+    root.dataset.theme = effectiveTheme;
+    root.classList.toggle('theme-light', effectiveTheme === 'light');
+    root.classList.toggle('theme-dark', effectiveTheme === 'dark');
+    applyThemeCssVars(palette);
+    updateThemeMeta(effectiveTheme, palette);
+    updateThemeControls();
+
+    if (vibrate) nativeVibrate('click');
+    if (syncChrome && typeof window.__lapSyncTelegramChrome === 'function') {
+      window.__lapSyncTelegramChrome();
+    }
+    requestAnimationFrame(() => {
+      if (typeof updateIndicator === 'function') updateIndicator();
+    });
+    return effectiveTheme;
+  }
+
+  function syncAppThemeFromEnvironment() {
+    // Manual selections stay fixed. Auto follows Telegram immediately, including
+    // custom Telegram theme colors from themeParams, not only light/dark mode.
+    if (currentThemeMode === 'auto') {
+      applyAppTheme('auto', { persist: false, vibrate: false, syncChrome: false });
+    } else {
+      // Refresh the manual palette too, in case the page resumed from background.
+      applyAppTheme(currentThemeMode, { persist: false, vibrate: false, syncChrome: false });
+    }
+    if (typeof window.__lapSyncTelegramChrome === 'function') window.__lapSyncTelegramChrome();
+  }
+
+  window.setAppTheme = function(mode) {
+    applyAppTheme(mode, { persist: true, vibrate: true, syncChrome: true });
+  };
+  window.syncAppThemeFromEnvironment = syncAppThemeFromEnvironment;
+
+  // Apply the saved preference immediately. The Telegram bridge is loaded in
+  // <head>, so Auto can use WebApp.colorScheme/themeParams before first paint.
+  applyAppTheme(currentThemeMode, { persist: false, vibrate: false, syncChrome: false });
+
+  try {
+    const media = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    if (media) {
+      const onNativeThemeChange = () => {
+        if (!getTelegramColorScheme()) syncAppThemeFromEnvironment();
+      };
+      if (typeof media.addEventListener === 'function') media.addEventListener('change', onNativeThemeChange);
+      else if (typeof media.addListener === 'function') media.addListener(onNativeThemeChange);
+    }
+  } catch (_) {}
+
+
   // ===== TELEGRAM MINI APP / FULLSCREEN =====
   (function initTelegramMiniApp() {
     const tg = window.Telegram && window.Telegram.WebApp;
@@ -89,28 +304,25 @@
     }
 
     function syncTelegramThemeVars() {
-      if (!tg || !tg.themeParams) return;
-      const tp = tg.themeParams;
-      const root = document.documentElement;
-      const map = {
-        bg_color: '--lap-tg-bg',
-        secondary_bg_color: '--lap-tg-secondary',
-        text_color: '--lap-tg-text',
-        hint_color: '--lap-tg-hint',
-        section_bg_color: '--lap-tg-section',
-        section_separator_color: '--lap-tg-separator'
-      };
-      Object.entries(map).forEach(([key, cssVar]) => {
-        if (tp[key]) root.style.setProperty(cssVar, tp[key]);
-      });
+      // Recalculate the semantic palette so Auto tracks all live Telegram
+      // themeParams. Manual Day/Night deliberately ignores Telegram colors.
+      const effectiveTheme = getEffectiveAppTheme(currentThemeMode);
+      const palette = getEffectiveThemePalette(currentThemeMode, effectiveTheme);
+      applyThemeCssVars(palette);
+      updateThemeMeta(effectiveTheme, palette);
     }
 
     function syncTelegramChrome() {
       if (!tg) return;
       syncTelegramThemeVars();
-      const bg = (tg.themeParams && tg.themeParams.bg_color) || '#0b0d14';
-      const bottom = (tg.themeParams && (tg.themeParams.bottom_bar_bg_color || tg.themeParams.secondary_bg_color)) || bg;
-      try { tg.setHeaderColor(bg); } catch (_) {}
+
+      const effectiveTheme = document.documentElement.dataset.theme || getEffectiveAppTheme();
+      const palette = currentThemePalette || getEffectiveThemePalette(currentThemeMode, effectiveTheme);
+      const bg = palette.bg;
+      const header = palette.header || bg;
+      const bottom = palette.bottom || palette.secondary || bg;
+
+      try { tg.setHeaderColor(header); } catch (_) {}
       try { tg.setBackgroundColor(bg); } catch (_) {}
       try {
         if (typeof tg.isVersionAtLeast === 'function' && tg.isVersionAtLeast('7.10') && typeof tg.setBottomBarColor === 'function') {
@@ -118,6 +330,7 @@
         }
       } catch (_) {}
     }
+    window.__lapSyncTelegramChrome = syncTelegramChrome;
 
     if (!tg) {
       syncViewport();
@@ -157,7 +370,7 @@
         try { tg.onEvent(eventName, refreshLayout); } catch (_) {}
       });
 
-    try { tg.onEvent('themeChanged', syncTelegramChrome); } catch (_) {}
+    try { tg.onEvent('themeChanged', () => { syncTelegramThemeVars(); syncAppThemeFromEnvironment(); }); } catch (_) {}
     try { tg.onEvent('fullscreenFailed', refreshLayout); } catch (_) {}
 
     window.addEventListener('resize', refreshLayout, { passive: true });
@@ -209,43 +422,48 @@
       navTime: "Время",
       navSettings: "Настройки",
 
-      feedTitle: "📡 Патчи",
+      feedTitle: "Патчи",
       feedPatchText: "Всем привет, рад что вы скачали и установили это приложение! Оно будет обновляться и пополняться новыми функциями которые вы можете предлагать написав нам в ТГ-канал.<br><br>Приятного пользования!",
       patchLatestLabel: "Новое обновление",
       patch101Title: "Что нового в LAPBase",
-      patch101Item1: "Полноэкранный режим в Telegram стал аккуратнее: интерфейс лучше использует весь экран и не залезает под элементы Mini App.",
-      patch101Item2: "Обновили внешний вид LAPBase — больше стекла, мягче панели и чище переходы между элементами.",
-      patch101Item3: "В настройках появился выбор акцентного цвета. Он меняет оформление всего приложения.",
-      patch101Item4: "Переработали карточки зданий в калькуляторе: на телефоне ими стало удобнее пользоваться и сравнивать уровни.",
-      patch101Item5: "Добавили автоматический выбор русского или английского языка по настройкам Telegram. Язык по-прежнему можно сменить вручную.",
-      patch101Item6: "Перевели названия зданий, настройки, подсказки и другие динамические элементы интерфейса.",
-      patch101Item7: "Калькулятор лучше подстраивается под небольшие экраны, а итоговые ресурсы читаются заметнее.",
-      patch101Item8: "Подправили верхнюю часть приложения и положение логотипа для fullscreen-режима.",
-      patch101Item9: "Нижняя панель, кнопки, поля и карточки получили более цельный мобильный стиль.",
-      patch101Item10: "В разделе гайдов оставили быстрый возврат «На главную».",
-      patch101Item11: "Добавили нативный виброотклик Telegram там, где он поддерживается.",
-      patch101Item12: "Исправили несколько мелочей в размерах, отступах и анимациях, чтобы приложение ощущалось стабильнее.",
+      patch101Item1: "Полностью обновили дизайн приложения — теперь он в стиле Liquid Glass с прозрачными слоями и глубиной.",
+      patch101Item2: "Добавили светлую, тёмную и автоматическую тему. В режиме «Авто» LAPBase повторяет тему Telegram.",
+      patch101Item3: "Добавили 5 размеров текста: 12, 14, 16, 18 и 20 px. Стандартный размер — 16 px.",
+      patch101Item4: "Гайды теперь открываются прямо внутри LAPBase, без отдельного окна Teletype.",
+      patch101Item5: "В списке гайдов появились большие обложки, названия, короткие описания и даты публикации.",
+      patch101Item6: "Когда листаешь список вниз, старые статьи подгружаются автоматически.",
+      patch101Item7: "В статьях работают оглавление, ссылки и кнопки «Назад», «Обновить» и «Наверх».",
+      patch101Item8: "Картинки в статьях показываются в правильных пропорциях. Их можно открыть на весь экран и увеличить пальцами.",
+      patch101Item9: "Если в статье есть русский и английский текст, LAPBase показывает нужную версию по выбранному языку.",
+      patch101Item10: "Исправили отображение длинного текста, списков, таблиц и блоков кода внутри статей.",
+      patch101Item11: "Обновили калькулятор: карточки зданий, выбор уровней и итоговые ресурсы стали удобнее на телефоне.",
+      patch101Item12: "Добавили выбор акцентного цвета — выбранный цвет используется во всём приложении.",
+      patch101Item13: "Улучшили полноэкранный режим Telegram и отступы, чтобы интерфейс не мешал кнопкам Mini App.",
+      patch101Item14: "Обновили иконки и привели кнопки, панели и карточки к одному стилю.",
+      patch101Item15: "Перенесли кнопку поддержки в шапку и добавили виброотклик Telegram там, где он поддерживается.",
+      patch101Item16: "Исправили много мелких проблем со скроллом, отступами, размерами и отображением на разных экранах.",
       patchShowMore: "Показать всё",
       patchShowLess: "Свернуть",
 
-      guidesTitle: "📖 База Знаний",
-      guidesHomeBtn: "На главную",
+      guidesTitle: "База знаний",
+      guideBackBtn: "Назад",
+      guideTopBtn: "Наверх",
       refreshBtn: "Обновить",
-      guidesUrl: "https://teletype.in/@1k0na_inf/+last-asylum-plague?theme=dark",
+      guidesUrl: "https://teletype.in/@1k0na_inf/+lastasylumplague",
 
-      calcTitle: "🧮 Калькулятор ресурсов",
-      defLevelsTitle: "🎯 Уровни по умолчанию",
+      calcTitle: "Калькулятор ресурсов",
+      defLevelsTitle: "Уровни по умолчанию",
       fromLvlLabel: "С уровня:",
       toLvlLabel: "До уровня:",
       applyBtn: "Применить",
       deselectAllBtn: "Снять все",
       selectAllBtn: "Выбрать все",
-      discountsTitle: "⚡ Скидки и Ускорения",
+      discountsTitle: "Скидки и Ускорения",
       resDiscountLabel: "Скидка на ресурсы (%)",
       speedupLabel: "Ускорение стр-ва (%)",
-      selectBuildingsTitle: "🏛️ Выбор зданий",
+      selectBuildingsTitle: "Выбор зданий",
       swipeBuildingsHint: "Свайпни вбок →",
-      totalCostTitle: "📊 Итоговый расход",
+      totalCostTitle: "Итоговый расход",
       fullNumbersToggle: "Полные цифры",
       resGrain: "Зерно",
       resWood: "Древесина",
@@ -257,22 +475,32 @@
       hoursUnit: "ч.",
       minsUnit: "мин.",
 
-      timeTitle: "🕒 Конвертер времени",
-      showConverter: "🕒 Показать конвертер",
-      hideConverter: "🕒 Скрыть конвертер",
-      utcHeader: "🕒 Конвертер UTC",
+      timeTitle: "Конвертер времени",
+      showConverter: "Показать конвертер",
+      hideConverter: "Скрыть конвертер",
+      utcHeader: "Конвертер UTC",
       sourceOffsetLabel: "Исходное смещение (ваш часовой пояс)",
       timeInputLabel: "Время (ЧЧ:ММ:СС)",
       gameOffsetLabel: "Часовой пояс игры",
       gameTimeResultLabel: "Время в игре (сервер)",
       converterHint: "Время пересчитывается автоматически каждую секунду. При клике на поле ввода автообновление приостанавливается для удобства ручного ввода.",
-      invalidTimeMsg: "⚠️ Некорректное время",
+      invalidTimeMsg: "Некорректное время",
 
-      settingsTitle: "⚙️ Настройки",
+      settingsTitle: "Настройки",
       langGroupTitle: "Язык / Language",
       appLangLabel: "Язык приложения",
       displayGroupTitle: "Отображение",
       uiSizeLabel: "Размер интерфейса",
+      themeLabel: "Тема",
+      themeAuto: "Авто",
+      themeLight: "День",
+      themeDark: "Ночь",
+      themeGroupAria: "Выбор темы оформления",
+      themeAutoHint: "Авто следует теме Telegram",
+      themeAutoLightHint: "Авто · Telegram: светлая",
+      themeAutoDarkHint: "Авто · Telegram: тёмная",
+      themeLightHint: "Светлая тема выбрана вручную",
+      themeDarkHint: "Тёмная тема выбрана вручную",
       accentColorLabel: "Акцентный цвет",
       accentGroupTitle: "Цвет интерфейса",
       accentOrange: "Оранжевый",
@@ -288,15 +516,23 @@
       buildingLevelsTitle: "Уровни улучшения",
       buildingUpgradeCost: "Стоимость улучшения",
       guidesFrameTitle: "База знаний LAPBase",
+      guideLoading: "Загружаем гайд…",
+      guideErrorTitle: "Не удалось загрузить гайд",
+      guideErrorText: "Проверьте Worker и попробуйте ещё раз.",
+      guideRetryBtn: "Повторить",
+      guideEnglishMissing: "У этой статьи пока нет отдельной английской версии. Показан доступный оригинал.",
+      guideImageViewerAria: "Просмотр изображения",
+      guideImageOpenOriginal: "Оригинал",
+      guideImageClose: "Закрыть",
       supportAria: "Поддержать разработку",
       socialGroupTitle: "Социальные сети",
       tgChannelLabel: "Telegram-канал",
       contactDevLabel: "Написать разработчику",
 
       supportPopupText: "На развитие приложения",
-      supportDevBtn: "💲 Поддержать разработку",
+      supportDevBtn: "Поддержать разработку",
 
-      sizeNames: ["Мелкий", "Средний", "Большой", "Очень большой"]
+      sizeNames: ["12 px", "14 px", "16 px", "18 px", "20 px"]
     },
     en: {
       navFeed: "Feed",
@@ -305,43 +541,48 @@
       navTime: "Time",
       navSettings: "Settings",
 
-      feedTitle: "📡 Patch Notes",
+      feedTitle: "Patch Notes",
       feedPatchText: "Hello everyone, glad you downloaded and installed this app! It will be updated and expanded with new features that you can suggest by writing to our Telegram channel.<br><br>Enjoy using it!",
       patchLatestLabel: "New update",
       patch101Title: "What's new in LAPBase",
-      patch101Item1: "Fullscreen mode in Telegram now uses the screen more cleanly and keeps content clear of Mini App controls.",
-      patch101Item2: "LAPBase has a refreshed look with softer glass surfaces, cleaner panels and smoother transitions.",
-      patch101Item3: "Settings now include accent colors, and the selected color is used across the whole app.",
-      patch101Item4: "Building cards in the calculator were reworked for phones, making levels and options easier to handle.",
-      patch101Item5: "The app can automatically choose Russian or English from Telegram settings, while manual language selection still works.",
-      patch101Item6: "Building names, settings, hints and other dynamic interface text are now translated as well.",
-      patch101Item7: "The calculator adapts better to smaller screens, with totals and resources easier to read at a glance.",
-      patch101Item8: "The top area and LAPBase logo position were tuned for fullscreen mode.",
-      patch101Item9: "Navigation, buttons, fields and cards now share a more consistent mobile style.",
-      patch101Item10: "Guides keep a quick Home button for returning to the start of the knowledge base.",
-      patch101Item11: "Telegram haptic feedback is used for taps on supported devices.",
-      patch101Item12: "We also fixed a number of spacing, sizing and animation details to make the app feel more stable.",
+      patch101Item1: "We completely refreshed the app design. It now uses a Liquid Glass style with transparent layers and more depth.",
+      patch101Item2: "Added Light, Dark and Auto themes. In Auto mode, LAPBase follows the Telegram theme.",
+      patch101Item3: "Added 5 text sizes: 12, 14, 16, 18 and 20 px. The default size is 16 px.",
+      patch101Item4: "Guides now open directly inside LAPBase instead of a separate Teletype page.",
+      patch101Item5: "Guide cards now show large covers, titles, short descriptions and publication dates.",
+      patch101Item6: "Older articles load automatically when you scroll to the bottom of the guide list.",
+      patch101Item7: "Articles now support a table of contents, links and Back, Refresh and Top controls.",
+      patch101Item8: "Article images keep their correct proportions. You can open them fullscreen and zoom with two fingers.",
+      patch101Item9: "If an article has Russian and English versions, LAPBase shows the version that matches the selected language.",
+      patch101Item10: "Fixed long text, lists, tables and code blocks inside articles.",
+      patch101Item11: "Updated the calculator: building cards, level selection and resource totals are easier to use on phones.",
+      patch101Item12: "Added accent color selection. The selected color is used across the app.",
+      patch101Item13: "Improved Telegram fullscreen mode and safe spacing so the interface stays clear of Mini App controls.",
+      patch101Item14: "Updated the icons and made buttons, panels and cards use one consistent style.",
+      patch101Item15: "Moved the support button into the header and added Telegram haptic feedback where supported.",
+      patch101Item16: "Fixed many smaller issues with scrolling, spacing, sizing and different screen sizes.",
       patchShowMore: "Show all",
       patchShowLess: "Collapse",
 
-      guidesTitle: "📖 Knowledge Base",
-      guidesHomeBtn: "Home",
+      guidesTitle: "Knowledge Base",
+      guideBackBtn: "Back",
+      guideTopBtn: "Top",
       refreshBtn: "Refresh",
-      guidesUrl: "https://teletype.in/@1k0na_inf/+last-asylum-plague?theme=dark",
+      guidesUrl: "https://teletype.in/@1k0na_inf/+lastasylumplague",
 
-      calcTitle: "🧮 Resource Calculator",
-      defLevelsTitle: "🎯 Default Levels",
+      calcTitle: "Resource Calculator",
+      defLevelsTitle: "Default Levels",
       fromLvlLabel: "From level:",
       toLvlLabel: "To level:",
       applyBtn: "Apply",
       deselectAllBtn: "Deselect All",
       selectAllBtn: "Select All",
-      discountsTitle: "⚡ Discounts & Speedups",
+      discountsTitle: "Discounts & Speedups",
       resDiscountLabel: "Resource discount (%)",
       speedupLabel: "Build speedup (%)",
-      selectBuildingsTitle: "🏛️ Select Buildings",
+      selectBuildingsTitle: "Select Buildings",
       swipeBuildingsHint: "Swipe sideways →",
-      totalCostTitle: "📊 Total Expenses",
+      totalCostTitle: "Total Expenses",
       fullNumbersToggle: "Full digits",
       resGrain: "Grain",
       resWood: "Wood",
@@ -353,22 +594,32 @@
       hoursUnit: "h.",
       minsUnit: "m.",
 
-      timeTitle: "🕒 Time Converter",
-      showConverter: "🕒 Show Converter",
-      hideConverter: "🕒 Hide Converter",
-      utcHeader: "🕒 UTC Converter",
+      timeTitle: "Time Converter",
+      showConverter: "Show Converter",
+      hideConverter: "Hide Converter",
+      utcHeader: "UTC Converter",
       sourceOffsetLabel: "Source Offset (Your Time Zone)",
       timeInputLabel: "Time (HH:MM:SS)",
       gameOffsetLabel: "Game Time Zone",
       gameTimeResultLabel: "In-Game Time (Server)",
       converterHint: "Time updates automatically every second. Clicking the input field pauses auto-update for manual editing convenience.",
-      invalidTimeMsg: "⚠️ Invalid time",
+      invalidTimeMsg: "Invalid time",
 
-      settingsTitle: "⚙️ Settings",
+      settingsTitle: "Settings",
       langGroupTitle: "Language / Язык",
       appLangLabel: "App Language",
       displayGroupTitle: "Display",
       uiSizeLabel: "Interface Size",
+      themeLabel: "Theme",
+      themeAuto: "Auto",
+      themeLight: "Day",
+      themeDark: "Night",
+      themeGroupAria: "Choose appearance theme",
+      themeAutoHint: "Auto follows Telegram theme",
+      themeAutoLightHint: "Auto · Telegram: light",
+      themeAutoDarkHint: "Auto · Telegram: dark",
+      themeLightHint: "Light theme selected manually",
+      themeDarkHint: "Dark theme selected manually",
       accentColorLabel: "Accent color",
       accentGroupTitle: "Interface color",
       accentOrange: "Orange",
@@ -384,15 +635,23 @@
       buildingLevelsTitle: "Upgrade levels",
       buildingUpgradeCost: "Upgrade cost",
       guidesFrameTitle: "LAPBase Knowledge Base",
+      guideLoading: "Loading guide…",
+      guideErrorTitle: "Could not load the guide",
+      guideErrorText: "Check the Worker and try again.",
+      guideRetryBtn: "Retry",
+      guideEnglishMissing: "This article does not have a separate English version yet. The available original is shown.",
+      guideImageViewerAria: "Image viewer",
+      guideImageOpenOriginal: "Original",
+      guideImageClose: "Close",
       supportAria: "Support development",
       socialGroupTitle: "Social Links",
       tgChannelLabel: "Telegram Channel",
       contactDevLabel: "Contact Developer",
 
       supportPopupText: "For app development",
-      supportDevBtn: "💲 Support Development",
+      supportDevBtn: "Support Development",
 
-      sizeNames: ["Small", "Medium", "Large", "X-Large"]
+      sizeNames: ["12 px", "14 px", "16 px", "18 px", "20 px"]
     }
   };
 
@@ -444,15 +703,16 @@
         : i18n[lang].patchShowMore;
     }
 
-    const iframe = document.getElementById('teletype-iframe');
-    if (iframe && i18n[lang].guidesUrl) {
-      iframe.src = i18n[lang].guidesUrl;
+    if (typeof window.renderCurrentGuideLanguage === 'function') {
+      window.renderCurrentGuideLanguage();
     }
 
     if (typeof applySizeByIndex === 'function' && typeof currentSizeIndex !== 'undefined') {
       const sizeLabel = document.getElementById('sizeValueLabel');
       if (sizeLabel) sizeLabel.textContent = i18n[lang].sizeNames[currentSizeIndex];
     }
+
+    updateThemeControls();
 
     if (typeof window.calcUpdateSelectAllControl === 'function') {
       window.calcUpdateSelectAllControl();
@@ -492,13 +752,17 @@
 
     const mainElem = document.querySelector('main');
     if (mainElem) {
-      mainElem.scrollTop = 0;
-      // На вкладке гайдов внешний контейнер не должен перехватывать
-      // вертикальный свайп у cross-origin iframe.
       mainElem.classList.toggle('guides-mode', tabId === 'guides');
+      if (tabId === 'guides') {
+        const guidesScroller = document.getElementById('guides');
+        if (guidesScroller) guidesScroller.scrollTop = 0;
+      } else {
+        mainElem.scrollTop = 0;
+      }
     }
 
     updateIndicator();
+    requestAnimationFrame(positionGuideFloatingControls);
   }
 
   function updateIndicator() {
@@ -518,21 +782,885 @@
     indicator.style.width = width + 'px';
   }
 
-  function goGuidesHome() {
-    nativeVibrate('click');
-    const iframe = document.getElementById('teletype-iframe');
-    if (iframe && i18n[currentLang].guidesUrl) {
-      iframe.src = i18n[currentLang].guidesUrl;
+  function getGuideScroller() {
+    // In Telegram WebView nested content is more reliable when the Guides tab
+    // owns its own scroll surface instead of sharing <main> with every tab.
+    const guides = document.getElementById('guides');
+    if (guides && guides.classList.contains('active')) return guides;
+    return document.querySelector('main');
+  }
+
+  function getGuideScrollTop() {
+    const scroller = getGuideScroller();
+    return scroller ? scroller.scrollTop : (window.scrollY || 0);
+  }
+
+  function setGuideScrollTop(top = 0, behavior = 'smooth') {
+    const scroller = getGuideScroller();
+    if (scroller) {
+      scroller.scrollTo({ top: Math.max(0, top), behavior });
+    } else {
+      window.scrollTo({ top: Math.max(0, top), behavior });
     }
   }
 
+  function updateGuideControls() {
+    const backBtn = document.getElementById('guideBackBtn');
+    const refreshBtn = document.getElementById('guideRefreshBtn');
+    const topBtn = document.getElementById('guideTopBtn');
+    if (backBtn) backBtn.disabled = guideState.history.length === 0 || guideState.loading;
+    if (refreshBtn) refreshBtn.disabled = guideState.loading;
+    if (topBtn) topBtn.disabled = guideState.loading;
+  }
+
+  function positionGuideFloatingControls() {
+    const dock = document.getElementById('guideFloatingControls');
+    const guides = document.getElementById('guides');
+    const card = document.getElementById('guideViewerCard');
+    const bottomNav = document.querySelector('.floating-nav-container');
+    if (!dock || !guides || !card) return;
+
+    if (!guides.classList.contains('active')) {
+      dock.hidden = true;
+      dock.classList.remove('is-positioned');
+      return;
+    }
+
+    // Keep the dock invisible until coordinates are known. This prevents the
+    // Telegram WebView from briefly showing it near the header on first paint.
+    dock.hidden = false;
+    dock.classList.remove('is-positioned');
+
+    const guidesRect = guides.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    if (!guidesRect.width || !guidesRect.height || !cardRect.width || !cardRect.height) {
+      dock.hidden = true;
+      return;
+    }
+
+    const scrollTop = guides.scrollTop || 0;
+    const scrollLeft = guides.scrollLeft || 0;
+    const dockWidth = Math.max(1, dock.offsetWidth || 132);
+    const dockHeight = Math.max(1, dock.offsetHeight || 50);
+
+    const sideInset = 16;
+    const bottomInset = 16;
+
+    // #guides is the actual Telegram scroll surface. Convert viewport
+    // coordinates of the dynamic reader card to coordinates in that surface.
+    const cardTop = cardRect.top - guidesRect.top + scrollTop;
+    const cardLeft = cardRect.left - guidesRect.left + scrollLeft;
+    const cardRight = cardLeft + cardRect.width;
+    const cardBottom = cardTop + cardRect.height;
+
+    // Reserve exactly the area occupied by LAPBase's bottom navigation when it
+    // overlaps the guide viewport. The control dock then follows immediately
+    // above it, preserving a small visual gap.
+    let navReserve = 0;
+    if (bottomNav) {
+      const navRect = bottomNav.getBoundingClientRect();
+      const overlap = guidesRect.bottom - navRect.top;
+      if (overlap > 0) navReserve = overlap + 10;
+    }
+
+    const visibleTop = scrollTop;
+    const visibleBottom = scrollTop + guides.clientHeight;
+    const readerVisible = cardBottom > visibleTop && cardTop < visibleBottom;
+    if (!readerVisible) {
+      dock.hidden = true;
+      return;
+    }
+
+    // Follow the lower edge of the visible reader. Near the real end of the
+    // card the dock stops with it instead of escaping below the container.
+    const desiredTop = visibleBottom - navReserve - bottomInset - dockHeight;
+    const minTop = cardTop + bottomInset;
+    const maxTop = Math.max(minTop, cardBottom - bottomInset - dockHeight);
+    const top = Math.min(Math.max(desiredTop, minTop), maxTop);
+
+    // Lower-right inside the dynamic card with a stable 16px inset.
+    const desiredLeft = cardRight - sideInset - dockWidth;
+    const minLeft = cardLeft + sideInset;
+    const maxLeft = Math.max(minLeft, cardRight - sideInset - dockWidth);
+    const left = Math.min(Math.max(desiredLeft, minLeft), maxLeft);
+
+    dock.style.setProperty('top', `${Math.round(top)}px`, 'important');
+    dock.style.setProperty('left', `${Math.round(left)}px`, 'important');
+    dock.style.setProperty('right', 'auto', 'important');
+    dock.style.setProperty('bottom', 'auto', 'important');
+    dock.style.setProperty('transform', 'none', 'important');
+    dock.classList.add('is-positioned');
+  }
+
+  function goGuideBack() {
+    if (!guideState.history.length || guideState.loading) return;
+    nativeVibrate('click');
+    const previous = guideState.history.pop();
+    updateGuideControls();
+    window.loadGuide?.(previous.url, {
+      pushHistory: false,
+      restoreScrollTop: previous.scrollTop || 0,
+    });
+  }
+
+  function refreshCurrentGuide() {
+    if (guideState.loading) return;
+    nativeVibrate('click');
+    window.loadGuide?.(guideState.sourceUrl || GUIDES_HOME_URL, {
+      pushHistory: false,
+      restoreScrollTop: getGuideScrollTop(),
+      preserveScroll: true,
+    });
+  }
+
+  function scrollGuideTop() {
+    nativeVibrate('click');
+    setGuideScrollTop(0, 'smooth');
+  }
+
+  // ===== НАТИВНЫЙ ПРОСМОТРЩИК ГАЙДОВ v5.6 =====
+  // Worker отдаёт разделённые RU / ENG версии статьи, восстановленные медиа
+  // и собственное оглавление. LAPBase управляет навигацией и скроллом.
+  const GUIDES_HOME_URL = 'https://teletype.in/@1k0na_inf/+lastasylumplague';
+  const GUIDES_WORKER_ORIGIN = 'https://lapbase-guides.dimasik98kz.workers.dev';
+
+  const guideState = {
+    sourceUrl: GUIDES_HOME_URL,
+    type: '',
+    titles: { ru: '', en: '' },
+    html: { ru: '', en: '' },
+    availableLanguages: { ru: true, en: false },
+    loading: false,
+    history: [],
+    indexItems: [],
+    indexPage: 1,
+    indexHasMore: false,
+    indexLoadingMore: false,
+    indexObserver: null,
+    indexScrollHandler: null,
+  };
+
+  function guideEls() {
+    return {
+      card: document.getElementById('guideViewerCard'),
+      indexHeading: document.getElementById('guideIndexHeading'),
+      status: document.getElementById('guideStatus'),
+      note: document.getElementById('guideTranslationNote'),
+      article: document.getElementById('guideArticle'),
+      title: document.getElementById('guideArticleTitle'),
+      content: document.getElementById('guideArticleContent'),
+      error: document.getElementById('guideError'),
+      errorText: document.getElementById('guideErrorText'),
+    };
+  }
+
+  function setGuideLoading(isLoading) {
+    guideState.loading = isLoading;
+    const el = guideEls();
+    if (isLoading && el.card) {
+      el.card.classList.remove('is-index', 'is-article');
+      el.card.dataset.guideType = 'loading';
+    }
+    if (el.indexHeading) el.indexHeading.hidden = true;
+    if (!el.status || !el.article || !el.error) return;
+    el.status.hidden = !isLoading;
+    el.article.hidden = isLoading;
+    el.error.hidden = true;
+    if (el.note) el.note.hidden = true;
+    updateGuideControls();
+  }
+
+  function showGuideError(message) {
+    guideState.loading = false;
+    const el = guideEls();
+    if (el.status) el.status.hidden = true;
+    if (el.indexHeading) el.indexHeading.hidden = true;
+    if (el.article) el.article.hidden = true;
+    if (el.error) el.error.hidden = false;
+    if (el.errorText) el.errorText.textContent = message || i18n[currentLang].guideErrorText;
+    updateGuideControls();
+  }
+
+  function sanitizeClientHtml(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html || '';
+    template.content.querySelectorAll('script,style,iframe,object,embed,form').forEach(el => el.remove());
+    template.content.querySelectorAll('*').forEach(el => {
+      [...el.attributes].forEach(attr => {
+        if (attr.name.toLowerCase().startsWith('on')) el.removeAttribute(attr.name);
+      });
+    });
+    return template.innerHTML;
+  }
+
+  function scrollGuideToHash(hash) {
+    if (!hash) return false;
+    const content = document.getElementById('guideArticleContent');
+    if (!content) return false;
+
+    let anchorName = '';
+    try { anchorName = decodeURIComponent(String(hash).replace(/^#/, '')); }
+    catch { anchorName = String(hash).replace(/^#/, ''); }
+    if (!anchorName) return false;
+
+    let target = null;
+    if (window.CSS?.escape) {
+      target = content.querySelector(`#${CSS.escape(anchorName)}`);
+    }
+
+    if (!target) {
+      const candidates = content.querySelectorAll('[name], [data-anchor], [data-teletype-anchor], [id]');
+      target = [...candidates].find(el =>
+        el.getAttribute('name') === anchorName ||
+        el.getAttribute('data-anchor') === anchorName ||
+        el.getAttribute('data-teletype-anchor') === anchorName ||
+        el.id === anchorName
+      );
+    }
+
+    if (!target) return false;
+
+    // scrollIntoView scrolls the nearest scrollable ancestor (#guides in the
+    // Telegram Mini App). Generated headings have scroll-margin-top in CSS, so
+    // they stop below the floating control dock instead of underneath it.
+    target.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+    return true;
+  }
+
+  const guideImageZoomState = {
+    scale: 1,
+    x: 0,
+    y: 0,
+    startScale: 1,
+    startX: 0,
+    startY: 0,
+    pinchDistance: 0,
+    pinchCenterX: 0,
+    pinchCenterY: 0,
+    panTouchX: 0,
+    panTouchY: 0,
+    gesture: '',
+  };
+
+  function guideLightboxEls() {
+    return {
+      root: document.getElementById('guideLightbox'),
+      stage: document.querySelector('#guideLightbox .guide-lightbox-stage'),
+      panzoom: document.getElementById('guideLightboxPanzoom'),
+      image: document.getElementById('guideLightboxImage'),
+      caption: document.getElementById('guideLightboxCaption'),
+      close: document.getElementById('guideLightboxClose'),
+    };
+  }
+
+  function getTouchDistance(a, b) {
+    return Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+  }
+
+  function getTouchCenter(a, b) {
+    return {
+      x: (a.clientX + b.clientX) / 2,
+      y: (a.clientY + b.clientY) / 2,
+    };
+  }
+
+  function clampGuideImagePan() {
+    const el = guideLightboxEls();
+    if (!el.stage || !el.image) return;
+
+    if (guideImageZoomState.scale <= 1.001) {
+      guideImageZoomState.x = 0;
+      guideImageZoomState.y = 0;
+      return;
+    }
+
+    const stageRect = el.stage.getBoundingClientRect();
+    const baseWidth = el.image.offsetWidth || stageRect.width;
+    const baseHeight = el.image.offsetHeight || stageRect.height;
+    const scaledWidth = baseWidth * guideImageZoomState.scale;
+    const scaledHeight = baseHeight * guideImageZoomState.scale;
+    const maxX = Math.max(0, (scaledWidth - stageRect.width) / 2 + 24);
+    const maxY = Math.max(0, (scaledHeight - stageRect.height) / 2 + 24);
+
+    guideImageZoomState.x = Math.max(-maxX, Math.min(maxX, guideImageZoomState.x));
+    guideImageZoomState.y = Math.max(-maxY, Math.min(maxY, guideImageZoomState.y));
+  }
+
+  function applyGuideImageTransform(animate = false) {
+    const el = guideLightboxEls();
+    if (!el.panzoom) return;
+    clampGuideImagePan();
+    el.panzoom.classList.toggle('is-zoomed', guideImageZoomState.scale > 1.001);
+    el.panzoom.classList.toggle('is-animating', animate);
+    el.panzoom.style.transform = `translate3d(${guideImageZoomState.x}px, ${guideImageZoomState.y}px, 0) scale(${guideImageZoomState.scale})`;
+    if (animate) {
+      window.setTimeout(() => el.panzoom?.classList.remove('is-animating'), 180);
+    }
+  }
+
+  function resetGuideImageZoom(animate = false) {
+    guideImageZoomState.scale = 1;
+    guideImageZoomState.x = 0;
+    guideImageZoomState.y = 0;
+    guideImageZoomState.gesture = '';
+    applyGuideImageTransform(animate);
+  }
+
+  function closeGuideImage() {
+    const el = guideLightboxEls();
+    if (!el.root) return;
+    el.root.hidden = true;
+    el.root.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('guide-lightbox-open');
+    resetGuideImageZoom(false);
+    if (el.image) {
+      el.image.removeAttribute('src');
+      el.image.alt = '';
+    }
+  }
+
+  function openGuideImage(img) {
+    if (!img) return;
+    const el = guideLightboxEls();
+    const src = img.currentSrc || img.getAttribute('src') || '';
+    if (!el.root || !el.image || !src) return;
+
+    const figure = img.closest('figure');
+    const captionText = figure?.querySelector('figcaption')?.textContent?.trim() || img.alt?.trim() || '';
+
+    resetGuideImageZoom(false);
+    el.image.src = src;
+    el.image.alt = img.alt || '';
+    if (el.caption) {
+      el.caption.textContent = captionText;
+      el.caption.hidden = !captionText;
+    }
+
+    el.root.hidden = false;
+    el.root.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('guide-lightbox-open');
+    requestAnimationFrame(() => el.close?.focus({ preventScroll: true }));
+  }
+
+  function setupGuideLightbox() {
+    const el = guideLightboxEls();
+    if (!el.root || el.root.dataset.bound === '1') return;
+    el.root.dataset.bound = '1';
+
+    el.root.addEventListener('click', (event) => {
+      if (event.target.matches?.('[data-guide-lightbox-close="1"]')) closeGuideImage();
+    });
+    el.close?.addEventListener('click', closeGuideImage);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !el.root.hidden) closeGuideImage();
+    });
+
+    if (!el.stage) return;
+
+    el.stage.addEventListener('touchstart', (event) => {
+      if (el.root.hidden) return;
+
+      if (event.touches.length === 2) {
+        event.preventDefault();
+        const [a, b] = event.touches;
+        const center = getTouchCenter(a, b);
+        guideImageZoomState.gesture = 'pinch';
+        guideImageZoomState.pinchDistance = Math.max(1, getTouchDistance(a, b));
+        guideImageZoomState.pinchCenterX = center.x;
+        guideImageZoomState.pinchCenterY = center.y;
+        guideImageZoomState.startScale = guideImageZoomState.scale;
+        guideImageZoomState.startX = guideImageZoomState.x;
+        guideImageZoomState.startY = guideImageZoomState.y;
+      } else if (event.touches.length === 1 && guideImageZoomState.scale > 1.001) {
+        event.preventDefault();
+        const touch = event.touches[0];
+        guideImageZoomState.gesture = 'pan';
+        guideImageZoomState.panTouchX = touch.clientX;
+        guideImageZoomState.panTouchY = touch.clientY;
+        guideImageZoomState.startX = guideImageZoomState.x;
+        guideImageZoomState.startY = guideImageZoomState.y;
+      }
+    }, { passive: false });
+
+    el.stage.addEventListener('touchmove', (event) => {
+      if (el.root.hidden) return;
+
+      if (event.touches.length === 2 && guideImageZoomState.gesture === 'pinch') {
+        event.preventDefault();
+        const [a, b] = event.touches;
+        const distance = Math.max(1, getTouchDistance(a, b));
+        const center = getTouchCenter(a, b);
+        const nextScale = Math.max(1, Math.min(5, guideImageZoomState.startScale * (distance / guideImageZoomState.pinchDistance)));
+
+        // Move the image with the pinch center so zoom feels anchored to the
+        // fingers instead of always zooming from the exact screen center.
+        guideImageZoomState.scale = nextScale;
+        guideImageZoomState.x = guideImageZoomState.startX + (center.x - guideImageZoomState.pinchCenterX);
+        guideImageZoomState.y = guideImageZoomState.startY + (center.y - guideImageZoomState.pinchCenterY);
+        applyGuideImageTransform(false);
+      } else if (event.touches.length === 1 && guideImageZoomState.gesture === 'pan' && guideImageZoomState.scale > 1.001) {
+        event.preventDefault();
+        const touch = event.touches[0];
+        guideImageZoomState.x = guideImageZoomState.startX + (touch.clientX - guideImageZoomState.panTouchX);
+        guideImageZoomState.y = guideImageZoomState.startY + (touch.clientY - guideImageZoomState.panTouchY);
+        applyGuideImageTransform(false);
+      }
+    }, { passive: false });
+
+    el.stage.addEventListener('touchend', (event) => {
+      if (el.root.hidden) return;
+      if (event.touches.length === 0) {
+        guideImageZoomState.gesture = '';
+        if (guideImageZoomState.scale < 1.06) resetGuideImageZoom(true);
+        else applyGuideImageTransform(true);
+      } else if (event.touches.length === 1 && guideImageZoomState.scale > 1.001) {
+        const touch = event.touches[0];
+        guideImageZoomState.gesture = 'pan';
+        guideImageZoomState.panTouchX = touch.clientX;
+        guideImageZoomState.panTouchY = touch.clientY;
+        guideImageZoomState.startX = guideImageZoomState.x;
+        guideImageZoomState.startY = guideImageZoomState.y;
+      }
+    }, { passive: false });
+
+    el.stage.addEventListener('touchcancel', () => {
+      guideImageZoomState.gesture = '';
+      applyGuideImageTransform(true);
+    }, { passive: false });
+
+    // Desktop fallback: wheel + Ctrl/Meta zooms the opened image without
+    // opening a separate original-file page.
+    el.stage.addEventListener('wheel', (event) => {
+      if (el.root.hidden || (!event.ctrlKey && !event.metaKey)) return;
+      event.preventDefault();
+      const factor = event.deltaY < 0 ? 1.12 : 0.89;
+      guideImageZoomState.scale = Math.max(1, Math.min(5, guideImageZoomState.scale * factor));
+      if (guideImageZoomState.scale <= 1.001) resetGuideImageZoom(false);
+      else applyGuideImageTransform(false);
+    }, { passive: false });
+  }
+
+  function prepareGuideMedia() {
+    const content = document.getElementById('guideArticleContent');
+    if (!content) return;
+
+    content.querySelectorAll('figure[data-media-display-width]').forEach(figure => {
+      const width = Number(figure.dataset.mediaDisplayWidth || 0);
+      if (Number.isFinite(width) && width > 0) {
+        figure.style.setProperty('--guide-media-display-width', `${Math.round(width)}px`);
+      }
+    });
+
+    if (guideState.type !== 'article') return;
+
+    content.querySelectorAll('img').forEach(img => {
+      if (img.closest('.guide-index-card')) return;
+      img.classList.add('guide-zoomable');
+      img.setAttribute('role', 'button');
+      img.setAttribute('tabindex', '0');
+      img.setAttribute('aria-label', currentLang === 'en' ? 'Open image' : 'Открыть изображение');
+      img.closest('figure')?.classList.add('guide-zoomable-figure');
+    });
+  }
+
+  function bindGuideLinks() {
+    const content = document.getElementById('guideArticleContent');
+    if (!content || content.dataset.interactionsBound === '1') return;
+    content.dataset.interactionsBound = '1';
+
+    content.addEventListener('click', (event) => {
+      const zoomImage = event.target.closest('img.guide-zoomable');
+      if (zoomImage) {
+        event.preventDefault();
+        event.stopPropagation();
+        openGuideImage(zoomImage);
+        return;
+      }
+
+      const anchor = event.target.closest('a[href]');
+      if (!anchor) return;
+
+      const rawHref = anchor.getAttribute('href') || '';
+      if (rawHref.startsWith('#')) {
+        event.preventDefault();
+        scrollGuideToHash(rawHref);
+        return;
+      }
+
+      let url;
+      try { url = new URL(rawHref, guideState.sourceUrl); } catch { return; }
+
+      event.preventDefault();
+
+      if (url.hostname === 'teletype.in') {
+        let current;
+        try { current = new URL(guideState.sourceUrl); } catch { current = null; }
+
+        if (current && url.pathname === current.pathname && url.hash) {
+          if (scrollGuideToHash(url.hash)) return;
+        }
+
+        window.loadGuide(url.toString(), { pushHistory: true });
+        return;
+      }
+
+      nativeOpenUrl(url.toString());
+    });
+
+    content.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const zoomImage = event.target.closest('img.guide-zoomable');
+      if (!zoomImage) return;
+      event.preventDefault();
+      openGuideImage(zoomImage);
+    });
+  }
+
+  function normalizeWorkerLocalized(value, fallback = '') {
+    if (typeof value === 'string') return { ru: value, en: '' };
+    return {
+      ru: value?.ru || fallback,
+      en: value?.en || '',
+    };
+  }
+
+
+  function escapeGuideHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function formatGuideDateClient(iso, lang) {
+    if (!iso) return '';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return '';
+    try {
+      return new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'ru-RU', {
+        day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC'
+      }).format(date);
+    } catch {
+      return date.toISOString().slice(0, 10);
+    }
+  }
+
+  function guideIndexCardHtml(item, lang) {
+    const hasRequested = item?.availableLanguages?.[lang] !== false;
+    const shownLang = hasRequested ? lang : (item?.availableLanguages?.ru ? 'ru' : lang);
+    const title = item?.title?.[shownLang] || item?.title?.ru || item?.title?.en || 'Guide';
+    const preview = item?.preview?.[shownLang] || '';
+    const date = formatGuideDateClient(item?.publishedAt, lang);
+    const badge = lang === 'en' && !item?.availableLanguages?.en
+      ? '<span class="guide-index-language-badge">RU only</span>' : '';
+    const open = lang === 'en' ? 'Open' : 'Открыть';
+    return `
+      <a class="guide-index-card" href="${escapeGuideHtml(item?.url || '')}" data-lapbase-guide-link="1">
+        ${item?.image ? `<img class="guide-index-image" src="${escapeGuideHtml(item.image)}" alt="" loading="lazy" decoding="async">` : ''}
+        <div class="guide-index-copy">
+          ${badge}
+          ${date ? `<time class="guide-index-date" datetime="${escapeGuideHtml(item.publishedAt)}">${escapeGuideHtml(date)}</time>` : ''}
+          <div class="guide-index-title">${escapeGuideHtml(title)}</div>
+          ${preview ? `<div class="guide-index-preview">${escapeGuideHtml(preview)}</div>` : ''}
+          <span class="guide-index-open">${open}</span>
+        </div>
+      </a>`;
+  }
+
+  function disconnectGuideIndexPagination() {
+    if (guideState.indexObserver) {
+      guideState.indexObserver.disconnect();
+      guideState.indexObserver = null;
+    }
+    const scroller = getGuideScroller();
+    if (guideState.indexScrollHandler && scroller) {
+      scroller.removeEventListener('scroll', guideState.indexScrollHandler);
+    }
+    guideState.indexScrollHandler = null;
+  }
+
+  function updateGuideIndexSentinel() {
+    const sentinel = document.getElementById('guideIndexSentinel');
+    if (!sentinel) return;
+    sentinel.hidden = !guideState.indexHasMore;
+    sentinel.classList.toggle('is-loading', guideState.indexLoadingMore);
+    const label = sentinel.querySelector('.guide-index-more-label');
+    if (label) {
+      label.textContent = guideState.indexLoadingMore
+        ? (currentLang === 'en' ? 'Loading more…' : 'Загружаем ещё…')
+        : (currentLang === 'en' ? 'Scroll for more' : 'Листайте дальше');
+    }
+  }
+
+  function renderGuideIndex(lang) {
+    const content = document.getElementById('guideArticleContent');
+    if (!content) return;
+    const cards = guideState.indexItems.map(item => guideIndexCardHtml(item, lang)).join('');
+    content.innerHTML = `
+      <div class="guide-index-list">${cards}</div>
+      <div class="guide-index-more" id="guideIndexSentinel" aria-live="polite">
+        <div class="guide-index-more-spinner" aria-hidden="true"></div>
+        <span class="guide-index-more-label"></span>
+      </div>`;
+    updateGuideIndexSentinel();
+    setupGuideIndexPagination();
+  }
+
+  function appendGuideIndexItems(items, lang) {
+    const list = document.querySelector('#guideArticleContent .guide-index-list');
+    if (!list || !items.length) return;
+    list.insertAdjacentHTML('beforeend', items.map(item => guideIndexCardHtml(item, lang)).join(''));
+  }
+
+  async function loadMoreGuides() {
+    if (guideState.type !== 'index' || !guideState.indexHasMore || guideState.indexLoadingMore || guideState.loading) return;
+    guideState.indexLoadingMore = true;
+    updateGuideIndexSentinel();
+
+    try {
+      // An RSS batch can contain a non-Last-Asylum post from the author's main
+      // feed. In that case the Worker correctly filters it out. Keep advancing
+      // automatically until we either append real guide cards or exhaust the
+      // feed, otherwise the sentinel can stay visible without another observer
+      // transition and look "stuck" to the user.
+      let attempts = 0;
+      let appended = false;
+      while (guideState.indexHasMore && !appended && attempts < 5) {
+        attempts += 1;
+        const nextPage = guideState.indexPage + 1;
+        const endpoint = `${GUIDES_WORKER_ORIGIN}/api/article?url=${encodeURIComponent(guideState.sourceUrl)}&page=${nextPage}`;
+        const response = await fetch(endpoint, { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok || !data?.ok || data.type !== 'index') throw new Error(data?.error || `HTTP ${response.status}`);
+
+        const known = new Set(guideState.indexItems.map(item => item?.url).filter(Boolean));
+        const fresh = (Array.isArray(data.items) ? data.items : []).filter(item => item?.url && !known.has(item.url));
+        guideState.indexPage = Number(data.pagination?.page) || nextPage;
+        guideState.indexHasMore = Boolean(data.pagination?.hasMore);
+
+        if (fresh.length) {
+          guideState.indexItems.push(...fresh);
+          appendGuideIndexItems(fresh, currentLang === 'en' ? 'en' : 'ru');
+          appended = true;
+        }
+      }
+    } catch (error) {
+      console.warn('[LAPBase] Guide pagination:', error);
+      guideState.indexHasMore = false;
+    } finally {
+      guideState.indexLoadingMore = false;
+      updateGuideIndexSentinel();
+
+      // If the sentinel is still already inside the preload zone after an
+      // append (large screens / short batch), continue without requiring the
+      // user to nudge the scroll position.
+      const scroller = getGuideScroller();
+      if (guideState.indexHasMore && scroller) {
+        const remaining = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+        if (remaining < 800) setTimeout(loadMoreGuides, 60);
+      }
+    }
+  }
+
+  function setupGuideIndexPagination() {
+    disconnectGuideIndexPagination();
+    if (guideState.type !== 'index' || !guideState.indexHasMore) return;
+    const sentinel = document.getElementById('guideIndexSentinel');
+    const scroller = getGuideScroller();
+    if (!sentinel || !scroller) return;
+
+    if ('IntersectionObserver' in window) {
+      guideState.indexObserver = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) loadMoreGuides();
+      }, { root: scroller, rootMargin: '700px 0px 700px 0px', threshold: 0.01 });
+      guideState.indexObserver.observe(sentinel);
+    }
+
+    guideState.indexScrollHandler = () => {
+      const remaining = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight;
+      if (remaining < 800) loadMoreGuides();
+    };
+    scroller.addEventListener('scroll', guideState.indexScrollHandler, { passive: true });
+  }
+
+  async function renderCurrentGuideLanguage() {
+    if (guideState.loading) return;
+    const el = guideEls();
+    if (!el.article || !el.title || !el.content) return;
+
+    const requested = currentLang === 'en' ? 'en' : 'ru';
+    const hasRequested = Boolean(guideState.html[requested]);
+    const fallbackLang = guideState.html.ru ? 'ru' : 'en';
+    const shownLang = hasRequested ? requested : fallbackLang;
+    const html = guideState.html[shownLang] || '';
+    const title = guideState.titles[shownLang] || guideState.titles.ru || guideState.titles.en || '';
+
+    if (el.card) {
+      el.card.classList.toggle('is-index', guideState.type === 'index');
+      el.card.classList.toggle('is-article', guideState.type !== 'index');
+      el.card.dataset.guideType = guideState.type || 'article';
+    }
+
+    const isIndex = guideState.type === 'index';
+    if (el.indexHeading) el.indexHeading.hidden = !isIndex;
+    el.title.hidden = isIndex;
+    el.title.textContent = isIndex ? '' : title;
+    disconnectGuideIndexPagination();
+    if (guideState.type === 'index' && Array.isArray(guideState.indexItems)) {
+      renderGuideIndex(shownLang);
+    } else {
+      el.content.innerHTML = sanitizeClientHtml(html);
+    }
+
+    // Broken image URLs should not leave a giant empty frame in the reader.
+    el.content.querySelectorAll('img').forEach(img => {
+      img.addEventListener('error', () => {
+        const figure = img.closest('figure');
+        if (figure && figure.querySelectorAll('img').length === 1) figure.classList.add('guide-media-error');
+        else img.hidden = true;
+      }, { once: true });
+    });
+
+    if (el.note) {
+      if (requested === 'en' && shownLang !== 'en') {
+        el.note.textContent = i18n[currentLang].guideEnglishMissing;
+        el.note.hidden = false;
+      } else {
+        el.note.hidden = true;
+      }
+    }
+
+    if (el.status) el.status.hidden = true;
+    if (el.error) el.error.hidden = true;
+    el.article.hidden = false;
+    prepareGuideMedia();
+    bindGuideLinks();
+    setupGuideLightbox();
+    updateGuideControls();
+    requestAnimationFrame(() => requestAnimationFrame(positionGuideFloatingControls));
+  }
+
+  async function loadGuide(url = GUIDES_HOME_URL, options = {}) {
+    let target;
+    try {
+      target = new URL(url, GUIDES_HOME_URL);
+    } catch {
+      showGuideError(i18n[currentLang].guideErrorText);
+      return;
+    }
+
+    if (target.hostname !== 'teletype.in') {
+      nativeOpenUrl(target.toString());
+      return;
+    }
+
+    const requestedHash = target.hash;
+    target.hash = '';
+    const targetUrl = target.toString();
+    const previousUrl = guideState.sourceUrl;
+
+    if (options.pushHistory && previousUrl && previousUrl !== targetUrl) {
+      guideState.history.push({
+        url: previousUrl,
+        scrollTop: getGuideScrollTop(),
+      });
+      if (guideState.history.length > 40) guideState.history.shift();
+    }
+
+    setGuideLoading(true);
+    guideState.sourceUrl = targetUrl;
+
+    try {
+      const endpoint = `${GUIDES_WORKER_ORIGIN}/api/article?url=${encodeURIComponent(targetUrl)}`;
+      const response = await fetch(endpoint, { cache: 'no-store' });
+      const data = await response.json();
+
+      if (!response.ok || !data?.ok || !data?.html) {
+        throw new Error(data?.error || `HTTP ${response.status}`);
+      }
+
+      guideState.type = data.type || 'article';
+      guideState.titles = normalizeWorkerLocalized(data.title, 'LAPBase Guide');
+      guideState.html = normalizeWorkerLocalized(data.html, '');
+      guideState.availableLanguages = data.availableLanguages || {
+        ru: Boolean(guideState.html.ru),
+        en: Boolean(guideState.html.en),
+      };
+      if (guideState.type === 'index') {
+        guideState.indexItems = Array.isArray(data.items) ? data.items : [];
+        guideState.indexPage = Number(data.pagination?.page) || 1;
+        guideState.indexHasMore = data.pagination?.hasMore !== false && guideState.indexItems.length > 0;
+        guideState.indexLoadingMore = false;
+      } else {
+        disconnectGuideIndexPagination();
+        guideState.indexItems = [];
+        guideState.indexPage = 1;
+        guideState.indexHasMore = false;
+        guideState.indexLoadingMore = false;
+      }
+
+      setGuideLoading(false);
+      await renderCurrentGuideLanguage();
+
+      if (requestedHash && scrollGuideToHash(requestedHash)) return;
+
+      if (typeof options.restoreScrollTop === 'number') {
+        requestAnimationFrame(() => setGuideScrollTop(options.restoreScrollTop, 'auto'));
+      } else if (!options.preserveScroll) {
+        requestAnimationFrame(() => setGuideScrollTop(0, 'auto'));
+      }
+    } catch (error) {
+      console.error('[LAPBase] Guide load error:', error);
+      showGuideError(`${i18n[currentLang].guideErrorText} (${error.message})`);
+    }
+  }
+
+  function retryCurrentGuide() {
+    nativeVibrate('click');
+    loadGuide(guideState.sourceUrl || GUIDES_HOME_URL, { pushHistory: false });
+  }
+
+  window.loadGuide = loadGuide;
+  window.retryCurrentGuide = retryCurrentGuide;
+  window.renderCurrentGuideLanguage = renderCurrentGuideLanguage;
+  window.goGuideBack = goGuideBack;
+  window.refreshCurrentGuide = refreshCurrentGuide;
+  window.scrollGuideTop = scrollGuideTop;
+  window.loadMoreGuides = loadMoreGuides;
+
+  // Start loading in the background so the Guides tab is ready when opened.
+  window.addEventListener('DOMContentLoaded', () => {
+    updateGuideControls();
+    setupGuideLightbox();
+    loadGuide(GUIDES_HOME_URL, { pushHistory: false });
+  }, { once: true });
+
   const navElem = document.getElementById('floatingNav');
   if (window.ResizeObserver && navElem) {
-    new ResizeObserver(updateIndicator).observe(navElem);
+    new ResizeObserver(() => { updateIndicator(); positionGuideFloatingControls(); }).observe(navElem);
+  }
+  const guideViewerCardElem = document.getElementById('guideViewerCard');
+  if (window.ResizeObserver && guideViewerCardElem) {
+    new ResizeObserver(() => positionGuideFloatingControls()).observe(guideViewerCardElem);
   }
 
   window.addEventListener('load', updateIndicator);
-  window.addEventListener('resize', updateIndicator);
+  window.addEventListener('resize', () => { updateIndicator(); positionGuideFloatingControls(); });
+
+  // Follow the lower edge of the dynamic guide container while scrolling.
+  let guideDockRaf = 0;
+  const scheduleGuideDockPosition = () => {
+    if (guideDockRaf) return;
+    guideDockRaf = requestAnimationFrame(() => {
+      guideDockRaf = 0;
+      positionGuideFloatingControls();
+    });
+  };
+  const guideScrollSurface = document.getElementById('guides');
+  guideScrollSurface?.addEventListener('scroll', scheduleGuideDockPosition, { passive: true });
+
 
   const toggleBtn = document.getElementById('toggleConverterBtn');
   const wrapper = document.getElementById('converterWrapper');
@@ -567,14 +1695,17 @@
   const sizeValueLabel = document.getElementById('sizeValueLabel');
 
   const sizeClasses = {
+    xsmall: 'app-size-xsmall',
     small: 'app-size-small',
     medium: 'app-size-medium',
     large: 'app-size-large',
     xlarge: 'app-size-xlarge'
   };
 
-  const sizeKeys = ['small', 'medium', 'large', 'xlarge'];
-  let currentSizeIndex = 1;
+  // 5 положений: 12 / 14 / 16 / 18 / 20 px.
+  // 16 px (index 2) — стандартный размер LAPBase.
+  const sizeKeys = ['xsmall', 'small', 'medium', 'large', 'xlarge'];
+  let currentSizeIndex = 2;
 
   function applySizeByIndex(index) {
     currentSizeIndex = index;
@@ -585,7 +1716,7 @@
     });
 
     appContainer.classList.add(sizeClasses[sizeKey]);
-    localStorage.setItem('appSizeIndex', index);
+    localStorage.setItem('appSizeIndexV2', index);
 
     if (sizeValueLabel) {
       sizeValueLabel.textContent = i18n[currentLang].sizeNames[index];
@@ -604,15 +1735,26 @@
     });
   }
 
-  const savedSizeIndex = localStorage.getItem('appSizeIndex');
-  if (savedSizeIndex !== null && sizeKeys[savedSizeIndex]) {
-    const idx = parseInt(savedSizeIndex, 10);
-    if (sizeSlider) sizeSlider.value = idx;
-    applySizeByIndex(idx);
-  } else {
-    if (sizeSlider) sizeSlider.value = 1;
-    applySizeByIndex(1);
+  // Новый диапазон получил отдельный ключ, чтобы корректно перенести
+  // старые 4 положения: 14/16/18/20 -> 14/16/18/20 в новой шкале.
+  const savedSizeIndexV2 = localStorage.getItem('appSizeIndexV2');
+  const legacySizeIndex = localStorage.getItem('appSizeIndex');
+  let initialSizeIndex = 2; // 16 px — стандарт
+
+  if (savedSizeIndexV2 !== null) {
+    const parsed = parseInt(savedSizeIndexV2, 10);
+    if (Number.isInteger(parsed) && parsed >= 0 && parsed < sizeKeys.length) {
+      initialSizeIndex = parsed;
+    }
+  } else if (legacySizeIndex !== null) {
+    const legacyParsed = parseInt(legacySizeIndex, 10);
+    if (Number.isInteger(legacyParsed) && legacyParsed >= 0 && legacyParsed <= 3) {
+      initialSizeIndex = legacyParsed + 1;
+    }
   }
+
+  if (sizeSlider) sizeSlider.value = initialSizeIndex;
+  applySizeByIndex(initialSizeIndex);
 
 
   const supportFab = document.getElementById('supportFab');
@@ -1703,7 +2845,7 @@
         const nameSpan = tile.querySelector('.building-name');
         if (nameSpan) {
           const displayName = currentLang === 'en' ? (buildingNamesEn[name] || name) : name;
-          nameSpan.textContent = `🏛️ ${displayName}`;
+          nameSpan.textContent = displayName;
         }
 
         if (!tile.classList.contains('active')) return;
@@ -1742,10 +2884,10 @@
 
         if (subEl) {
           subEl.innerHTML = `
-            <div class="building-stat grain"><span class="building-stat-icon">🌾</span><span class="building-stat-value">${formatNumber(bGrain)}</span></div>
-            <div class="building-stat wood"><span class="building-stat-icon">🪵</span><span class="building-stat-value">${formatNumber(bWood)}</span></div>
-            <div class="building-stat grass"><span class="building-stat-icon">🌿</span><span class="building-stat-value">${formatNumber(bGrass)}</span></div>
-            <div class="building-stat time"><span class="building-stat-icon">⏱️</span><span class="building-stat-value">${formatTime(bTime)}</span></div>
+            <div class="building-stat grain"><span class="building-stat-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-grain"></use></svg></span><span class="building-stat-value">${formatNumber(bGrain)}</span></div>
+            <div class="building-stat wood"><span class="building-stat-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-wood"></use></svg></span><span class="building-stat-value">${formatNumber(bWood)}</span></div>
+            <div class="building-stat grass"><span class="building-stat-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-leaf"></use></svg></span><span class="building-stat-value">${formatNumber(bGrass)}</span></div>
+            <div class="building-stat time"><span class="building-stat-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-timer"></use></svg></span><span class="building-stat-value">${formatTime(bTime)}</span></div>
           `;
         }
       });
@@ -1809,7 +2951,7 @@
           </div>
 
           <div class="building-tile-header">
-            <div class="building-icon-shell" aria-hidden="true">🏛️</div>
+            <div class="building-icon-shell" aria-hidden="true"><svg class="ui-icon"><use href="#icon-building"></use></svg></div>
             <div class="building-title-wrap" onclick="toggleBuildingTile('${name}')">
               <span class="building-name">${displayName}</span>
               <span class="building-card-status" data-i18n="buildingSelectedStatus">Выбрано для расчёта</span>
@@ -1822,7 +2964,7 @@
               <span class="level-select-label" data-i18n="fromLvlLabel">С уровня:</span>
               <select id="calc-from-${name}" class="level-select" onchange="window.calcCalculateTotals()">${optionsFrom}</select>
             </div>
-            <div class="building-level-arrow" aria-hidden="true">→</div>
+            <div class="building-level-arrow" aria-hidden="true"><svg class="ui-icon"><use href="#icon-arrow-right"></use></svg></div>
             <div class="level-select-wrap">
               <span class="level-select-label" data-i18n="toLvlLabel">До уровня:</span>
               <select id="calc-to-${name}" class="level-select" onchange="window.calcCalculateTotals()">${optionsTo}</select>
@@ -1906,6 +3048,7 @@
     renderBuildings();
     setAccentColor(localStorage.getItem('appAccentColor') || 'orange', false);
     setAppLanguage(currentLang);
+    applyAppTheme(currentThemeMode, { persist: false, vibrate: false, syncChrome: true });
   })();
 
 // ===== PREMIUM UI MICRO-ANIMATIONS =====
