@@ -241,9 +241,14 @@
         tg && typeof tg.isVersionAtLeast === 'function' && tg.isVersionAtLeast('8.0')
       );
 
+      const jsSafeVars = [
+        '--lap-js-safe-top','--lap-js-safe-bottom','--lap-js-safe-left','--lap-js-safe-right',
+        '--lap-js-system-safe-top','--lap-js-system-safe-bottom','--lap-js-system-safe-left','--lap-js-system-safe-right',
+        '--lap-js-content-safe-top','--lap-js-content-safe-bottom','--lap-js-content-safe-left','--lap-js-content-safe-right'
+      ];
+
       if (!supportsSafeArea) {
-        ['--lap-js-safe-top','--lap-js-safe-bottom','--lap-js-safe-left','--lap-js-safe-right']
-          .forEach(name => root.style.removeProperty(name));
+        jsSafeVars.forEach(name => root.style.removeProperty(name));
         root.classList.toggle('tg-fullscreen', Boolean(tg && tg.isFullscreen));
         return;
       }
@@ -259,10 +264,24 @@
       const contentLeft = numberOrZero(content.left);
       const contentRight = numberOrZero(content.right);
 
-      root.style.setProperty('--lap-js-safe-top', `${Math.round(Math.max(contentTop, safeTop))}px`);
-      root.style.setProperty('--lap-js-safe-bottom', `${Math.round(Math.max(contentBottom, safeBottom))}px`);
-      root.style.setProperty('--lap-js-safe-left', `${Math.round(Math.max(contentLeft, safeLeft))}px`);
-      root.style.setProperty('--lap-js-safe-right', `${Math.round(Math.max(contentRight, safeRight))}px`);
+      const setPx = (name, value) => root.style.setProperty(name, `${Math.round(value)}px`);
+
+      // Keep Telegram's two coordinate systems separate. The header consumes
+      // both in fullscreen, while the legacy --lap-js-safe-* values keep the
+      // rest of the application backward compatible.
+      setPx('--lap-js-system-safe-top', safeTop);
+      setPx('--lap-js-system-safe-bottom', safeBottom);
+      setPx('--lap-js-system-safe-left', safeLeft);
+      setPx('--lap-js-system-safe-right', safeRight);
+      setPx('--lap-js-content-safe-top', contentTop);
+      setPx('--lap-js-content-safe-bottom', contentBottom);
+      setPx('--lap-js-content-safe-left', contentLeft);
+      setPx('--lap-js-content-safe-right', contentRight);
+
+      setPx('--lap-js-safe-top', Math.max(contentTop, safeTop));
+      setPx('--lap-js-safe-bottom', Math.max(contentBottom, safeBottom));
+      setPx('--lap-js-safe-left', Math.max(contentLeft, safeLeft));
+      setPx('--lap-js-safe-right', Math.max(contentRight, safeRight));
       root.classList.toggle('tg-fullscreen', Boolean(tg.isFullscreen));
     }
 
@@ -314,6 +333,16 @@
       });
     }
 
+    let fullscreenSettleTimer = 0;
+    function scheduleFullscreenLayoutRefresh() {
+      scheduleTelegramLayoutRefresh();
+      // Some Telegram clients publish fullscreenChanged before the final safe
+      // area values are visible to JS. Re-read them once the native transition
+      // has settled instead of relying on hard-coded top padding.
+      clearTimeout(fullscreenSettleTimer);
+      fullscreenSettleTimer = window.setTimeout(scheduleTelegramLayoutRefresh, 90);
+    }
+
     function setAppActive(active) {
       root.classList.toggle('tg-inactive', !active);
       if (active) scheduleTelegramLayoutRefresh();
@@ -350,8 +379,8 @@
     try { tg.onEvent('themeChanged', () => { syncTelegramThemeVars(); syncAppThemeFromEnvironment(); }); } catch (_) {}
     try { tg.onEvent('safeAreaChanged', scheduleTelegramLayoutRefresh); } catch (_) {}
     try { tg.onEvent('contentSafeAreaChanged', scheduleTelegramLayoutRefresh); } catch (_) {}
-    try { tg.onEvent('fullscreenChanged', scheduleTelegramLayoutRefresh); } catch (_) {}
-    try { tg.onEvent('fullscreenFailed', scheduleTelegramLayoutRefresh); } catch (_) {}
+    try { tg.onEvent('fullscreenChanged', scheduleFullscreenLayoutRefresh); } catch (_) {}
+    try { tg.onEvent('fullscreenFailed', scheduleFullscreenLayoutRefresh); } catch (_) {}
     try {
       tg.onEvent('viewportChanged', event => {
         // Expensive geometry updates only need the final stable state.
@@ -3252,6 +3281,7 @@
     const defToSelect = document.getElementById('calc-def-to');
     const applyDefBtn = document.getElementById('calc-apply-def-btn');
     const selectAllToggle = document.getElementById('calc-select-all-toggle');
+    const selectAllControl = document.getElementById('calc-select-all-control');
     const selectAllLabel = document.getElementById('calc-select-all-label');
     const discountResInput = document.getElementById('calc-discount-res');
     const discountTimeInput = document.getElementById('calc-discount-time');
@@ -3661,6 +3691,7 @@
         ? i18n[currentLang].deselectAllBtn
         : i18n[currentLang].selectAllBtn;
       if (selectAllToggle) selectAllToggle.checked = isAllSelected;
+      if (selectAllControl) selectAllControl.setAttribute('aria-checked', String(isAllSelected));
     }
 
     function syncSelectAllState() {
@@ -3772,22 +3803,56 @@
     });
 
     let isAllSelected = true;
-    if (selectAllToggle) {
-      selectAllToggle.checked = true;
-      selectAllToggle.addEventListener('change', () => {
-        nativeVibrate('click');
-        isAllSelected = !!selectAllToggle.checked;
-        buildingNames.forEach(name => {
-          const tile = document.getElementById(`calc-tile-${name}`);
-          if (tile) {
-            tile.classList.toggle('active', isAllSelected);
-            tile.classList.toggle('disabled', !isAllSelected);
-          }
+
+    function setAllBuildingsSelected(nextSelected) {
+      const mainElem = document.querySelector('main');
+      const scrollTop = mainElem ? mainElem.scrollTop : 0;
+
+      isAllSelected = Boolean(nextSelected);
+      buildingNames.forEach(name => {
+        const tile = document.getElementById(`calc-tile-${name}`);
+        if (tile) {
+          tile.classList.toggle('active', isAllSelected);
+          tile.classList.toggle('disabled', !isAllSelected);
+        }
+      });
+
+      updateSelectAllControl();
+      scheduleCalculatorCalculation();
+
+      // Keep the calculator at exactly the same reading position. The hidden
+      // checkbox is not allowed to receive native label focus, and this also
+      // protects against a late Telegram/Chromium scroll-anchor correction.
+      if (mainElem) {
+        mainElem.scrollTop = scrollTop;
+        requestAnimationFrame(() => {
+          mainElem.scrollTop = scrollTop;
         });
-        updateSelectAllControl();
-        scheduleCalculatorCalculation();
+      }
+    }
+
+    if (selectAllToggle) selectAllToggle.checked = true;
+
+    if (selectAllControl && selectAllToggle) {
+      const activateSelectAllControl = () => {
+        nativeVibrate('click');
+        setAllBuildingsSelected(!isAllSelected);
+      };
+
+      selectAllControl.addEventListener('click', event => {
+        // Prevent native <label> activation/focus of the visually hidden input.
+        // That focus can make Telegram/Chromium change <main>.scrollTop.
+        event.preventDefault();
+        activateSelectAllControl();
+      });
+
+      selectAllControl.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        activateSelectAllControl();
       });
     }
+
     updateSelectAllControl();
 
     const calculatorInputs = [

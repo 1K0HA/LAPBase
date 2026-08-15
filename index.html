@@ -27,7 +27,7 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="./styles.css?v=1.0.21-feed-v102">
+  <link rel="stylesheet" href="./styles.css?v=1.0.25-fullscreen-header">
 </head>
 <body>
   <svg class="ui-icon-sprite" aria-hidden="true" focusable="false">
@@ -189,14 +189,6 @@
             <select id="calc-def-to"></select>
           </div>
         </div>
-        <div class="calc-btn-group">
-          <button type="button" class="calc-btn" id="calc-apply-def-btn" data-i18n="applyBtn">Применить</button>
-          <label class="toggle-label calc-select-toggle" for="calc-select-all-toggle">
-            <input type="checkbox" id="calc-select-all-toggle" checked>
-            <span class="toggle-custom"></span>
-            <span id="calc-select-all-label" data-i18n="deselectAllBtn">Снять все</span>
-          </label>
-        </div>
       </div>
 
       <div class="card-update calc-parameter-card">
@@ -266,11 +258,22 @@
         </div>
       </div>
 
-      <div class="calc-buildings-header icon-line-title"><svg class="ui-icon" aria-hidden="true"><use href="#icon-building"></use></svg><span data-i18n="selectBuildingsTitle">Выбор зданий</span></div>
+      <div class="calc-buildings-heading-row">
+        <div class="calc-buildings-header icon-line-title"><svg class="ui-icon" aria-hidden="true"><use href="#icon-building"></use></svg><span data-i18n="selectBuildingsTitle">Выбор зданий</span></div>
+        <label class="toggle-label calc-select-toggle calc-buildings-select-toggle" id="calc-select-all-control" role="switch" tabindex="0" aria-checked="true">
+          <input type="checkbox" id="calc-select-all-toggle" checked tabindex="-1" aria-hidden="true">
+          <span class="toggle-custom"></span>
+          <span id="calc-select-all-label" data-i18n="deselectAllBtn">Снять все</span>
+        </label>
+      </div>
       <div class="calc-swipe-hint" data-i18n="swipeBuildingsHint">Свайпни вбок →</div>
       <div id="calc-buildings-container" class="calc-buildings-list"></div>
 
-      <div class="card-update total-card" style="margin-top: var(--space-5);">
+      <div class="calc-buildings-apply-row">
+        <button type="button" class="calc-btn" id="calc-apply-def-btn" data-i18n="applyBtn">Применить</button>
+      </div>
+
+      <div class="card-update total-card">
         <div class="total-header">
           <span class="total-title icon-line-title"><svg class="ui-icon" aria-hidden="true"><use href="#icon-chart"></use></svg><span data-i18n="totalCostTitle">Всего требуется</span></span>
           <label class="toggle-label" id="calc-full-numbers-control" role="switch" tabindex="0" aria-checked="true">
@@ -563,6 +566,6 @@
   </div>
 
   <script src="./calculator-math.js?v=1.0.20-full-numbers-scroll-fix" defer></script>
-  <script src="./app.js?v=1.0.21-feed-v102" defer></script>
+  <script src="./app.js?v=1.0.25-fullscreen-header" defer></script>
 </body>
 </html>

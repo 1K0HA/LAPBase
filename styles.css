@@ -52,11 +52,28 @@ img, svg { display: block; }
   --z-overlay: 40;
   --z-modal: 50;
 
-  /* Telegram/browser geometry. */
-  --safe-top: var(--lap-js-safe-top, max(env(safe-area-inset-top, 0px), var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)));
-  --safe-bottom: var(--lap-js-safe-bottom, max(env(safe-area-inset-bottom, 0px), var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)));
-  --safe-left: var(--lap-js-safe-left, max(env(safe-area-inset-left, 0px), var(--tg-content-safe-area-inset-left, 0px), var(--tg-safe-area-inset-left, 0px)));
-  --safe-right: var(--lap-js-safe-right, max(env(safe-area-inset-right, 0px), var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)));
+  /* Telegram/browser geometry. Keep the device safe area and Telegram's
+     content safe area separate. Fullscreen header geometry uses both. */
+  --system-safe-top: var(--lap-js-system-safe-top, max(env(safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px)));
+  --system-safe-bottom: var(--lap-js-system-safe-bottom, max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px)));
+  --system-safe-left: var(--lap-js-system-safe-left, max(env(safe-area-inset-left, 0px), var(--tg-safe-area-inset-left, 0px)));
+  --system-safe-right: var(--lap-js-system-safe-right, max(env(safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px)));
+
+  --content-safe-top: var(--lap-js-content-safe-top, var(--tg-content-safe-area-inset-top, 0px));
+  --content-safe-bottom: var(--lap-js-content-safe-bottom, var(--tg-content-safe-area-inset-bottom, 0px));
+  --content-safe-left: var(--lap-js-content-safe-left, var(--tg-content-safe-area-inset-left, 0px));
+  --content-safe-right: var(--lap-js-content-safe-right, var(--tg-content-safe-area-inset-right, 0px));
+
+  /* Compatibility insets used by the rest of the app. Both Telegram values are
+     edge insets, so the larger one defines the readable boundary. */
+  --safe-top: var(--lap-js-safe-top, max(var(--system-safe-top), var(--content-safe-top)));
+  --safe-bottom: var(--lap-js-safe-bottom, max(var(--system-safe-bottom), var(--content-safe-bottom)));
+  --safe-left: var(--lap-js-safe-left, max(var(--system-safe-left), var(--content-safe-left)));
+  --safe-right: var(--lap-js-safe-right, max(var(--system-safe-right), var(--content-safe-right)));
+
+  /* Header has its own inset so fullscreen changes do not need to alter the
+     geometry rules of main/navigation. */
+  --header-safe-top: var(--safe-top);
 
   /* Typography. Medium is the 16px project default. */
   --font-size-base: 16px;
@@ -209,8 +226,8 @@ button, .nav-btn, .guides-action-btn, .toggle-label, .building-select-button { u
 
 header {
   flex: 0 0 auto;
-  min-height: calc(52px + var(--safe-top));
-  padding-top: var(--safe-top);
+  min-height: calc(52px + var(--header-safe-top));
+  padding-top: var(--header-safe-top);
   padding-inline: max(var(--space-4), calc(var(--safe-left) + var(--space-4))) max(var(--space-4), calc(var(--safe-right) + var(--space-4)));
   display: flex;
   align-items: center;
@@ -1121,7 +1138,7 @@ body.guide-lightbox-open { overflow:hidden; }
 }
 
 @media (orientation:landscape) and (max-height:620px) {
-  header { min-height:calc(44px + var(--safe-top)); }
+  header { min-height:calc(44px + var(--header-safe-top)); }
   .header-brand-row { min-height:44px; }
   main { padding-top:0; padding-bottom:calc(72px + var(--safe-bottom)); }
   .floating-nav { min-height:56px; }
@@ -1197,6 +1214,25 @@ html.telegram-miniapp header {
   background: color-mix(in srgb, var(--color-bg-primary) 72%, transparent);
   backdrop-filter: blur(var(--glass-header-blur)) saturate(var(--glass-saturation));
   -webkit-backdrop-filter: blur(var(--glass-header-blur)) saturate(var(--glass-saturation));
+}
+
+/* Telegram fullscreen: the header background is allowed to reach the physical
+   top edge, while interactive header content starts inside the readable area
+   reported by SafeAreaInset / ContentSafeAreaInset. */
+html.telegram-miniapp.tg-fullscreen {
+  --header-safe-top: max(var(--system-safe-top), var(--content-safe-top));
+}
+
+html.telegram-miniapp.tg-fullscreen header {
+  padding-top: var(--header-safe-top);
+  min-height: calc(var(--ui-header-height) + var(--header-safe-top));
+  padding-inline:
+    max(var(--ui-page-padding), calc(max(var(--system-safe-left), var(--content-safe-left)) + var(--ui-page-padding)))
+    max(var(--ui-page-padding), calc(max(var(--system-safe-right), var(--content-safe-right)) + var(--ui-page-padding)));
+}
+
+html.telegram-miniapp.tg-fullscreen .header-brand-row {
+  min-height: var(--ui-header-height);
 }
 
 html.telegram-miniapp .header-brand-row {
@@ -1818,7 +1854,7 @@ html.app-ui-large,
 
 /* Geometry coverage: every reusable component reads the same UI tokens. */
 .app-container header {
-  min-height: calc(var(--ui-header-height) + var(--safe-top));
+  min-height: calc(var(--ui-header-height) + var(--header-safe-top));
   padding-inline:
     max(var(--ui-page-padding), calc(var(--safe-left) + var(--ui-page-padding)))
     max(var(--ui-page-padding), calc(var(--safe-right) + var(--ui-page-padding)));
@@ -2531,4 +2567,79 @@ html.tg-inactive *,
 html.tg-inactive *::before,
 html.tg-inactive *::after {
   animation-play-state: paused !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* v5.70 — Calculator controls layout                                         */
+/* Keep existing control IDs/logic; only reposition the controls in the UI.   */
+/* -------------------------------------------------------------------------- */
+.calc-buildings-heading-row {
+  margin-top: var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.calc-buildings-heading-row .calc-buildings-header {
+  min-width: 0;
+  margin: 0;
+}
+
+.calc-buildings-select-toggle {
+  flex: 0 0 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.calc-buildings-apply-row {
+  display: flex;
+  width: 100%;
+  margin: var(--space-1) 0 var(--space-4);
+}
+
+.calc-buildings-apply-row .calc-btn {
+  width: 100%;
+  max-width: none;
+}
+
+.calc-buildings-apply-row + .total-card {
+  margin-top: 0;
+}
+
+@media (max-width: 479px) {
+  .calc-buildings-heading-row {
+    gap: var(--space-2);
+  }
+
+  .calc-buildings-select-toggle {
+    font-size: var(--font-footnote);
+  }
+
+  .calc-buildings-select-toggle .toggle-custom {
+    width: 45px;
+    height: 27px;
+    flex-basis: 45px;
+  }
+
+  .calc-buildings-select-toggle .toggle-custom::after {
+    width: 23px;
+    height: 23px;
+  }
+
+  .calc-buildings-select-toggle input:checked + .toggle-custom::after {
+    transform: translateX(18px);
+  }
+
+}
+
+@media (max-width: 359px) {
+  .calc-buildings-heading-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .calc-buildings-select-toggle {
+    margin-inline-start: auto;
+  }
 }
