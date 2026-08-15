@@ -863,24 +863,81 @@
     }
   };
 
-  function detectNativeLanguage() {
+  function getTelegramLanguageCode() {
     const tg = window.Telegram && window.Telegram.WebApp;
-    const tgLang = tg && tg.initDataUnsafe && tg.initDataUnsafe.user &&
-      tg.initDataUnsafe.user.language_code;
 
-    // Inside Telegram the app language always follows the user's Telegram
-    // language: Russian -> RU, every other Telegram language -> EN.
-    // A previously saved manual choice must not override Telegram on startup.
-    if (tgLang) {
-      return String(tgLang).toLowerCase().startsWith('ru') ? 'ru' : 'en';
+    // Primary source recommended by Telegram Mini Apps.
+    const direct = tg?.initDataUnsafe?.user?.language_code;
+    if (direct) return String(direct).trim().toLowerCase();
+
+    // Fallback: parse the signed initData payload if initDataUnsafe was not
+    // populated by a particular Telegram WebView yet.
+    try {
+      const rawInitData = String(tg?.initData || '');
+      if (rawInitData) {
+        const params = new URLSearchParams(rawInitData);
+        const rawUser = params.get('user');
+        if (rawUser) {
+          const user = JSON.parse(rawUser);
+          if (user?.language_code) return String(user.language_code).trim().toLowerCase();
+        }
+      }
+    } catch (_) {}
+
+    // Last Telegram-specific fallback: some clients expose tgWebAppData in the
+    // launch URL before WebApp.initDataUnsafe is fully ready.
+    try {
+      const launch = new URLSearchParams(window.location.search);
+      const rawWebAppData = launch.get('tgWebAppData');
+      if (rawWebAppData) {
+        const params = new URLSearchParams(rawWebAppData);
+        const rawUser = params.get('user');
+        if (rawUser) {
+          const user = JSON.parse(rawUser);
+          if (user?.language_code) return String(user.language_code).trim().toLowerCase();
+        }
+      }
+    } catch (_) {}
+
+    return '';
+  }
+
+  function isTelegramMiniAppContext() {
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if (!tg) return false;
+    if (tg?.initDataUnsafe?.user) return true;
+    if (String(tg.initData || '').length > 0) return true;
+    try {
+      return new URLSearchParams(window.location.search).has('tgWebAppData');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function telegramLanguageToAppLanguage(languageCode) {
+    return String(languageCode || '').toLowerCase().startsWith('ru') ? 'ru' : 'en';
+  }
+
+  function detectNativeLanguage() {
+    const tgLang = getTelegramLanguageCode();
+
+    // Telegram is always authoritative when it provides language_code:
+    // ru / ru-* => Russian; every other Telegram language => English.
+    if (tgLang) return telegramLanguageToAppLanguage(tgLang);
+
+    // If this is clearly a Telegram Mini App but language_code is temporarily
+    // unavailable, do not let an old saved appLang override the environment.
+    if (isTelegramMiniAppContext()) {
+      const browserLang = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+      return telegramLanguageToAppLanguage(browserLang);
     }
 
-    // Outside Telegram keep the existing browser/manual fallback behavior.
+    // Outside Telegram a manual choice can still be remembered.
     const saved = localStorage.getItem('appLang');
     if (saved && i18n[saved]) return saved;
 
     const browserLang = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
-    return String(browserLang).toLowerCase().startsWith('ru') ? 'ru' : 'en';
+    return telegramLanguageToAppLanguage(browserLang);
   }
 
   let currentLang = detectNativeLanguage();
@@ -951,6 +1008,37 @@
       if (typeof updateIndicator === 'function') updateIndicator();
     });
   }
+
+  function syncAppLanguageFromTelegram() {
+    const tgLang = getTelegramLanguageCode();
+    if (!tgLang) return false;
+
+    const telegramAppLang = telegramLanguageToAppLanguage(tgLang);
+    if (telegramAppLang !== currentLang) {
+      setAppLanguage(telegramAppLang, false);
+    }
+    return true;
+  }
+
+  // Keep language synchronized not only on the first script evaluation, but
+  // also when Telegram re-activates the Mini App after it was in background.
+  window.__lapSyncAppLanguageFromTelegram = syncAppLanguageFromTelegram;
+  try {
+    const tg = window.Telegram && window.Telegram.WebApp;
+    if (tg && typeof tg.onEvent === 'function') {
+      tg.onEvent('activated', syncAppLanguageFromTelegram);
+    }
+  } catch (_) {}
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) syncAppLanguageFromTelegram();
+  }, { passive: true });
+  window.addEventListener('focus', syncAppLanguageFromTelegram, { passive: true });
+  window.addEventListener('pageshow', syncAppLanguageFromTelegram, { passive: true });
+
+  // Run one extra check after the current task. This handles Telegram clients
+  // where initDataUnsafe becomes available a fraction later than the bridge.
+  queueMicrotask(syncAppLanguageFromTelegram);
+  window.setTimeout(syncAppLanguageFromTelegram, 120);
 
   function togglePatchCard(cardId, buttonId) {
     nativeVibrate('click');
