@@ -864,15 +864,23 @@
   };
 
   function detectNativeLanguage() {
+    const tg = window.Telegram && window.Telegram.WebApp;
+    const tgLang = tg && tg.initDataUnsafe && tg.initDataUnsafe.user &&
+      tg.initDataUnsafe.user.language_code;
+
+    // Inside Telegram the app language always follows the user's Telegram
+    // language: Russian -> RU, every other Telegram language -> EN.
+    // A previously saved manual choice must not override Telegram on startup.
+    if (tgLang) {
+      return String(tgLang).toLowerCase().startsWith('ru') ? 'ru' : 'en';
+    }
+
+    // Outside Telegram keep the existing browser/manual fallback behavior.
     const saved = localStorage.getItem('appLang');
     if (saved && i18n[saved]) return saved;
 
-    const tgLang = window.Telegram && window.Telegram.WebApp &&
-      window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user &&
-      window.Telegram.WebApp.initDataUnsafe.user.language_code;
-    const browserLang = (navigator.languages && navigator.languages[0]) || navigator.language || 'ru';
-    const source = String(tgLang || browserLang || 'ru').toLowerCase();
-    return source.startsWith('ru') ? 'ru' : 'en';
+    const browserLang = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+    return String(browserLang).toLowerCase().startsWith('ru') ? 'ru' : 'en';
   }
 
   let currentLang = detectNativeLanguage();
