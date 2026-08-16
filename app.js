@@ -650,6 +650,9 @@
       langGroupTitle: "Язык / Language",
       appLangLabel: "Язык приложения",
       langAuto: "Авто",
+      langConflictTitle: "Подтвердите язык",
+      langConflictText: "Telegram и устройство сообщают разные языки. Выберите язык LAPBase или оставьте автоматический режим.",
+      langConflictKeepAuto: "Оставить Авто",
       displayGroupTitle: "Отображение",
       textSizeLabel: "Размер текста",
       uiSizeLabel: "Размер интерфейса",
@@ -809,6 +812,9 @@
       langGroupTitle: "Language / Язык",
       appLangLabel: "App Language",
       langAuto: "Auto",
+      langConflictTitle: "Confirm language",
+      langConflictText: "Telegram and your device report different languages. Choose the LAPBase language or keep Auto mode.",
+      langConflictKeepAuto: "Keep Auto",
       displayGroupTitle: "Display",
       textSizeLabel: "Text Size",
       uiSizeLabel: "Interface Size",
@@ -865,115 +871,53 @@
     }
   };
 
-  function getTelegramLaunchParam(name) {
-    const values = [];
-
-    // telegram-web-app.js keeps the original Mini App launch parameters here.
-    try {
-      const value = window.Telegram?.WebView?.initParams?.[name];
-      if (value != null && String(value).trim()) values.push(String(value).trim());
-    } catch (_) {}
-
-    // Telegram clients may place launch parameters either in query or hash.
-    for (const raw of [window.location.search, window.location.hash]) {
-      try {
-        const cleaned = String(raw || '').replace(/^[?#]/, '');
-        if (!cleaned) continue;
-        const value = new URLSearchParams(cleaned).get(name);
-        if (value != null && String(value).trim()) values.push(String(value).trim());
-      } catch (_) {}
-    }
-
-    return values[0] || '';
-  }
-
+  // ===== APP LANGUAGE =====
+  // Manual RU/EN is persistent. Auto prefers the WebView/browser locale because
+  // Telegram user.language_code can be stale or differ from the Telegram UI.
+  // Telegram language_code is used only as a fallback and as a conflict signal.
   function getLanguageCodeFromTelegramInitData(rawInitData) {
+    const raw = String(rawInitData || '').trim();
+    if (!raw) return '';
     try {
-      const raw = String(rawInitData || '');
-      if (!raw) return '';
-      const params = new URLSearchParams(raw);
-      const rawUser = params.get('user');
-      if (!rawUser) return '';
-      const user = JSON.parse(rawUser);
-      return user?.language_code ? String(user.language_code).trim().toLowerCase() : '';
+      const userRaw = new URLSearchParams(raw).get('user');
+      if (!userRaw) return '';
+      const user = JSON.parse(userRaw);
+      return String(user?.language_code || '').trim().toLowerCase();
     } catch (_) {
       return '';
     }
   }
 
-  const TELEGRAM_LANG_SESSION_KEY = 'lapTelegramLanguageCode';
+  function normalizeLanguageCode(code) {
+    return String(code || '').trim().toLowerCase();
+  }
 
-  function rememberTelegramLanguageCode(code) {
-    const normalized = String(code || '').trim().toLowerCase();
+  function languageCodeToAppLanguage(code) {
+    const normalized = normalizeLanguageCode(code);
     if (!normalized) return '';
-    try { sessionStorage.setItem(TELEGRAM_LANG_SESSION_KEY, normalized); } catch (_) {}
-    return normalized;
+    return normalized.startsWith('ru') ? 'ru' : 'en';
   }
 
-  function getRememberedTelegramLanguageCode() {
+  function getBrowserLanguageCode() {
     try {
-      return String(sessionStorage.getItem(TELEGRAM_LANG_SESSION_KEY) || '').trim().toLowerCase();
+      const preferred = Array.isArray(navigator.languages) && navigator.languages.length
+        ? navigator.languages[0]
+        : navigator.language;
+      return normalizeLanguageCode(preferred);
     } catch (_) {
       return '';
     }
   }
 
-  function getTelegramLanguageCode({ allowSessionFallback = true } = {}) {
+  function getTelegramLanguageCode() {
     const tg = window.Telegram && window.Telegram.WebApp;
-
-    // 1) Standard Telegram Mini App API.
-    const direct = tg?.initDataUnsafe?.user?.language_code;
-    if (direct) return rememberTelegramLanguageCode(direct);
-
-    // 2) Raw initData exposed by Telegram.WebApp.
-    const fromWebAppInitData = getLanguageCodeFromTelegramInitData(tg?.initData);
-    if (fromWebAppInitData) return rememberTelegramLanguageCode(fromWebAppInitData);
-
-    // 3) Original tgWebAppData retained by telegram-web-app.js.
-    const fromWebViewInitData = getLanguageCodeFromTelegramInitData(
-      window.Telegram?.WebView?.initParams?.tgWebAppData
-    );
-    if (fromWebViewInitData) return rememberTelegramLanguageCode(fromWebViewInitData);
-
-    // 4) Raw launch data from URL query/hash. Some Telegram clients expose it
-    // here even when WebApp.initData has not been populated yet.
-    const fromLaunchData = getLanguageCodeFromTelegramInitData(
-      getTelegramLaunchParam('tgWebAppData')
-    );
-    if (fromLaunchData) return rememberTelegramLanguageCode(fromLaunchData);
-
-    // 5) During minimize/restore Telegram may momentarily expose empty initData.
-    // Keep the last language received in this WebView session instead of
-    // falling back to the phone/browser locale.
-    return allowSessionFallback ? getRememberedTelegramLanguageCode() : '';
-  }
-
-  function isTelegramMiniAppContext() {
-    const tg = window.Telegram && window.Telegram.WebApp;
-    if (!tg) return false;
-
-    if (tg?.initDataUnsafe?.user) return true;
-    if (String(tg?.initData || '').length > 0) return true;
-    if (String(window.Telegram?.WebView?.initParams?.tgWebAppData || '').length > 0) return true;
-    if (getTelegramLaunchParam('tgWebAppData')) return true;
-    if (getTelegramLaunchParam('tgWebAppVersion')) return true;
-    if (getTelegramLaunchParam('tgWebAppPlatform')) return true;
-
-    // Outside Telegram the official bridge normally reports platform=unknown.
-    const platform = String(tg?.platform || '').toLowerCase();
-    return Boolean(platform && platform !== 'unknown');
-  }
-
-  function telegramLanguageToAppLanguage(languageCode) {
-    return String(languageCode || '').trim().toLowerCase().startsWith('ru') ? 'ru' : 'en';
-  }
-
-  function getBrowserFallbackLanguage() {
-    const browserLang = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
-    return telegramLanguageToAppLanguage(browserLang);
+    const direct = normalizeLanguageCode(tg?.initDataUnsafe?.user?.language_code);
+    if (direct) return direct;
+    return getLanguageCodeFromTelegramInitData(tg?.initData);
   }
 
   const APP_LANG_MODE_STORAGE_KEY = 'appLangMode';
+  const APP_LANG_CONFLICT_ACK_STORAGE_KEY = 'appLangAutoConflictAck';
   const APP_LANG_MODES = new Set(['auto', 'ru', 'en']);
 
   function getSavedAppLanguageMode() {
@@ -981,22 +925,41 @@
     return APP_LANG_MODES.has(saved) ? saved : 'auto';
   }
 
-  function detectAutoLanguage() {
-    if (isTelegramMiniAppContext()) {
-      const telegramCode = getTelegramLanguageCode();
-      // Auto follows Telegram only. ru / ru-* => Russian; any other actual
-      // Telegram language => English. If launch data is temporarily missing,
-      // keep English until the retry below receives the real Telegram code.
-      return telegramCode ? telegramLanguageToAppLanguage(telegramCode) : 'en';
-    }
-    return getBrowserFallbackLanguage();
+  function resolveAutoLanguage() {
+    const browserLanguageCode = getBrowserLanguageCode();
+    const telegramLanguageCode = getTelegramLanguageCode();
+    const browserAppLanguage = languageCodeToAppLanguage(browserLanguageCode);
+    const telegramAppLanguage = languageCodeToAppLanguage(telegramLanguageCode);
+
+    return {
+      browserLanguageCode,
+      telegramLanguageCode,
+      browserAppLanguage,
+      telegramAppLanguage,
+      // WebView/browser locale is the primary Auto signal. Telegram is fallback.
+      appLanguage: browserAppLanguage || telegramAppLanguage || 'en',
+      conflict: Boolean(
+        browserAppLanguage &&
+        telegramAppLanguage &&
+        browserAppLanguage !== telegramAppLanguage
+      ),
+    };
+  }
+
+  function getLanguageConflictSignature(state) {
+    if (!state?.conflict) return '';
+    return `web:${state.browserAppLanguage}|tg:${state.telegramAppLanguage}`;
   }
 
   let currentLanguageMode = getSavedAppLanguageMode();
+  localStorage.setItem(APP_LANG_MODE_STORAGE_KEY, currentLanguageMode);
+  localStorage.removeItem('appLang');
+
+  let currentAutoLanguageState = resolveAutoLanguage();
   let currentLang = currentLanguageMode === 'auto'
-    ? detectAutoLanguage()
+    ? currentAutoLanguageState.appLanguage
     : currentLanguageMode;
-  let lastTelegramLanguageCode = getTelegramLanguageCode();
+  let languageConflictReturnFocus = null;
 
   function updateLanguageControls() {
     const autoBtn = document.getElementById('langBtnAuto');
@@ -1018,6 +981,45 @@
       enBtn.classList.toggle('active', active);
       enBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
     }
+  }
+
+  function closeLanguageConflictPrompt({ restoreFocus = true } = {}) {
+    const popup = document.getElementById('languageConflictPopup');
+    if (!popup || !popup.classList.contains('active')) return;
+    popup.classList.remove('active');
+    popup.setAttribute('aria-hidden', 'true');
+    if (restoreFocus) {
+      requestAnimationFrame(() => languageConflictReturnFocus?.focus?.({ preventScroll: true }));
+    }
+    languageConflictReturnFocus = null;
+  }
+
+  function maybeShowLanguageConflictPrompt() {
+    const popup = document.getElementById('languageConflictPopup');
+    if (!popup || currentLanguageMode !== 'auto') {
+      closeLanguageConflictPrompt({ restoreFocus: false });
+      return;
+    }
+
+    currentAutoLanguageState = resolveAutoLanguage();
+    if (!currentAutoLanguageState.conflict) {
+      closeLanguageConflictPrompt({ restoreFocus: false });
+      return;
+    }
+
+    const signature = getLanguageConflictSignature(currentAutoLanguageState);
+    const acknowledged = localStorage.getItem(APP_LANG_CONFLICT_ACK_STORAGE_KEY);
+    if (!signature || acknowledged === signature || popup.classList.contains('active')) return;
+
+    languageConflictReturnFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : document.getElementById('langBtnAuto');
+
+    popup.classList.add('active');
+    popup.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => {
+      popup.querySelector('.language-conflict-choice')?.focus({ preventScroll: true });
+    });
   }
 
   function applyAppLanguage(lang, vibrate = false) {
@@ -1081,23 +1083,32 @@
 
     requestAnimationFrame(() => {
       if (typeof updateIndicator === 'function') updateIndicator();
-      if (typeof renderLanguageDiagnostics === 'function') renderLanguageDiagnostics();
+      maybeShowLanguageConflictPrompt();
     });
   }
 
   function setAppLanguageMode(mode, vibrate = true) {
     if (!APP_LANG_MODES.has(mode)) return;
 
+    const previousMode = currentLanguageMode;
     currentLanguageMode = mode;
     localStorage.setItem(APP_LANG_MODE_STORAGE_KEY, mode);
+    localStorage.removeItem('appLang');
 
-    // Keep appLang only as a compatibility value for older builds. Auto owns
-    // no fixed language, while manual modes persist exactly like accent/size.
-    if (mode === 'auto') localStorage.removeItem('appLang');
-    else localStorage.setItem('appLang', mode);
+    if (mode !== 'auto') {
+      closeLanguageConflictPrompt({ restoreFocus: false });
+      applyAppLanguage(mode, vibrate);
+      return;
+    }
 
-    const nextLang = mode === 'auto' ? detectAutoLanguage() : mode;
-    applyAppLanguage(nextLang, vibrate);
+    // Explicitly returning from manual mode to Auto should allow a fresh
+    // conflict confirmation for the current pair of language signals.
+    if (previousMode !== 'auto') {
+      localStorage.removeItem(APP_LANG_CONFLICT_ACK_STORAGE_KEY);
+    }
+
+    currentAutoLanguageState = resolveAutoLanguage();
+    applyAppLanguage(currentAutoLanguageState.appLanguage, vibrate);
   }
 
   // Backward-compatible public function used by the RU/EN buttons.
@@ -1106,127 +1117,40 @@
     setAppLanguageMode(lang, vibrate);
   }
 
+  function refreshAutoLanguageFromEnvironment() {
+    if (currentLanguageMode !== 'auto') return;
+    currentAutoLanguageState = resolveAutoLanguage();
+    if (currentAutoLanguageState.appLanguage !== currentLang) {
+      applyAppLanguage(currentAutoLanguageState.appLanguage, false);
+    } else {
+      maybeShowLanguageConflictPrompt();
+    }
+  }
+
   window.setAppLanguageMode = setAppLanguageMode;
 
-  function syncTelegramLanguageIfActuallyChanged() {
-    if (currentLanguageMode !== 'auto' || !isTelegramMiniAppContext()) return false;
-
-    const code = getTelegramLanguageCode({ allowSessionFallback: false }) || getTelegramLanguageCode();
-    if (!code) return false;
-    if (code === lastTelegramLanguageCode) return false;
-
-    lastTelegramLanguageCode = code;
-    const nextLang = telegramLanguageToAppLanguage(code);
-    if (nextLang !== currentLang) applyAppLanguage(nextLang, false);
-    return true;
-  }
-
-  // Temporary safe diagnostics: expose only language/source/platform state.
-  // Never render initData, user id, names, hashes or other Telegram payload fields.
-  function getLanguageDiagnosticsSnapshot() {
-    const tg = window.Telegram && window.Telegram.WebApp;
-    const directLanguageCode = String(tg?.initDataUnsafe?.user?.language_code || '').trim().toLowerCase();
-    const initDataLanguageCode = getLanguageCodeFromTelegramInitData(tg?.initData);
-    const webViewLanguageCode = getLanguageCodeFromTelegramInitData(
-      window.Telegram?.WebView?.initParams?.tgWebAppData
-    );
-    const urlLanguageCode = getLanguageCodeFromTelegramInitData(
-      getTelegramLaunchParam('tgWebAppData')
-    );
-    const sessionLanguageCode = getRememberedTelegramLanguageCode();
-
-    let resolvedSource = 'none';
-    let resolvedTelegramLanguageCode = '';
-    if (directLanguageCode) {
-      resolvedSource = 'initDataUnsafe.user';
-      resolvedTelegramLanguageCode = directLanguageCode;
-    } else if (initDataLanguageCode) {
-      resolvedSource = 'WebApp.initData';
-      resolvedTelegramLanguageCode = initDataLanguageCode;
-    } else if (webViewLanguageCode) {
-      resolvedSource = 'WebView.initParams';
-      resolvedTelegramLanguageCode = webViewLanguageCode;
-    } else if (urlLanguageCode) {
-      resolvedSource = 'URL tgWebAppData';
-      resolvedTelegramLanguageCode = urlLanguageCode;
-    } else if (sessionLanguageCode) {
-      resolvedSource = 'session fallback';
-      resolvedTelegramLanguageCode = sessionLanguageCode;
-    }
-
-    return {
-      languageMode: currentLanguageMode,
-      currentAppLanguage: currentLang,
-      directLanguageCode: directLanguageCode || null,
-      initDataLanguageCode: initDataLanguageCode || null,
-      webViewLanguageCode: webViewLanguageCode || null,
-      urlLanguageCode: urlLanguageCode || null,
-      resolvedTelegramLanguageCode: resolvedTelegramLanguageCode || null,
-      resolvedSource,
-      sessionLanguageCode: sessionLanguageCode || null,
-      telegramPlatform: tg?.platform || null,
-      browserLanguage: (navigator.languages && navigator.languages[0]) || navigator.language || null,
-      inTelegramMiniApp: isTelegramMiniAppContext(),
-      hasInitDataUser: Boolean(tg?.initDataUnsafe?.user),
-      hasInitData: Boolean(String(tg?.initData || '')),
-      hasWebViewLaunchData: Boolean(String(window.Telegram?.WebView?.initParams?.tgWebAppData || '')),
-      hasUrlLaunchData: Boolean(getTelegramLaunchParam('tgWebAppData')),
-    };
-  }
-
-  window.__lapLanguageDebug = getLanguageDiagnosticsSnapshot;
-
-  function renderLanguageDiagnostics() {
-    const root = document.getElementById('languageDebugCard');
-    if (!root) return;
-    const data = getLanguageDiagnosticsSnapshot();
-    const put = (id, value) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = value == null || value === '' ? '—' : String(value);
-    };
-
-    put('langDebugDirect', data.directLanguageCode);
-    put('langDebugInitData', data.initDataLanguageCode);
-    put('langDebugLaunch', data.webViewLanguageCode || data.urlLanguageCode);
-    put('langDebugResolved', data.resolvedTelegramLanguageCode);
-    put('langDebugSource', data.resolvedSource);
-    put('langDebugMode', data.languageMode);
-    put('langDebugApp', data.currentAppLanguage);
-    put('langDebugPlatform', data.telegramPlatform);
-    put('langDebugBrowser', data.browserLanguage);
-  }
-
-  window.refreshLanguageDiagnostics = function() {
-    nativeVibrate('click');
-    renderLanguageDiagnostics();
+  window.confirmLanguageConflict = function(lang) {
+    if (lang !== 'ru' && lang !== 'en') return;
+    closeLanguageConflictPrompt({ restoreFocus: false });
+    setAppLanguageMode(lang, true);
   };
 
-  window.__lapSyncAppLanguageFromTelegram = syncTelegramLanguageIfActuallyChanged;
-
-  [0, 100, 500, 1500].forEach(delay => {
-    window.setTimeout(renderLanguageDiagnostics, delay);
-  });
-
-  // Telegram can expose initData a moment after the deferred script starts.
-  // Retry only while Auto is selected; manual RU/EN must never be overwritten.
-  if (currentLanguageMode === 'auto' && isTelegramMiniAppContext()) {
-    [0, 50, 150, 400, 800, 1500, 2500].forEach(delay => {
-      window.setTimeout(() => {
-        if (currentLanguageMode !== 'auto') return;
-        const code = getTelegramLanguageCode({ allowSessionFallback: false }) || getTelegramLanguageCode();
-        if (!code) return;
-        const nextLang = telegramLanguageToAppLanguage(code);
-        lastTelegramLanguageCode = code;
-        if (nextLang !== currentLang) applyAppLanguage(nextLang, false);
-      }, delay);
-    });
-  }
-
-  try {
-    const tg = window.Telegram && window.Telegram.WebApp;
-    if (tg && typeof tg.onEvent === 'function') {
-      tg.onEvent('activated', syncTelegramLanguageIfActuallyChanged);
+  window.keepAutoLanguage = function() {
+    if (currentLanguageMode !== 'auto') {
+      closeLanguageConflictPrompt();
+      return;
     }
+    currentAutoLanguageState = resolveAutoLanguage();
+    const signature = getLanguageConflictSignature(currentAutoLanguageState);
+    if (signature) localStorage.setItem(APP_LANG_CONFLICT_ACK_STORAGE_KEY, signature);
+    nativeVibrate('click');
+    closeLanguageConflictPrompt();
+  };
+
+  // The only live Auto-language event we listen to. Focus/visibility/activated
+  // do not imply a language change and therefore never touch app language.
+  try {
+    window.addEventListener('languagechange', refreshAutoLanguageFromEnvironment, { passive: true });
   } catch (_) {}
 
   function togglePatchCard(cardId, buttonId) {

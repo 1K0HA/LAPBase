@@ -888,58 +888,6 @@ select option { background:var(--color-bg-secondary); color:var(--color-label-pr
   box-shadow:0 1px 4px rgba(0,0,0,.10);
 }
 
-/* Temporary language diagnostics. Safe: no initData/user identifiers are rendered. */
-.language-debug-card {
-  width:100%;
-  padding:var(--space-4);
-  border-radius:0 0 var(--radius-card) var(--radius-card);
-  background:var(--color-surface-primary);
-  color:var(--color-label-primary);
-}
-.language-debug-head {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:var(--space-3);
-  margin-bottom:var(--space-3);
-}
-.language-debug-title { font-size:var(--font-footnote); font-weight:700; color:var(--color-label-secondary); }
-.language-debug-refresh {
-  appearance:none;
-  min-height:32px;
-  padding:5px 10px;
-  border:0;
-  border-radius:10px;
-  background:var(--color-surface-secondary);
-  color:var(--color-accent);
-  font-size:var(--font-caption);
-  font-weight:600;
-}
-.language-debug-grid { display:grid; gap:1px; overflow:hidden; border-radius:var(--radius-control); background:var(--color-separator); }
-.language-debug-row {
-  min-width:0;
-  padding:9px 10px;
-  display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(72px,auto);
-  align-items:center;
-  gap:var(--space-3);
-  background:var(--color-surface-secondary);
-  font-size:var(--font-caption);
-}
-.language-debug-row > span { min-width:0; color:var(--color-label-secondary); overflow-wrap:anywhere; }
-.language-debug-row code {
-  min-width:0;
-  padding:0;
-  background:transparent;
-  color:var(--color-label-primary);
-  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  font-size:inherit;
-  font-weight:700;
-  text-align:right;
-  overflow-wrap:anywhere;
-}
-.language-debug-hint { margin-top:var(--space-3); color:var(--color-label-tertiary); font-size:var(--font-caption); line-height:1.4; }
-
 .size-setting-item { flex-direction:column; align-items:stretch; }
 .size-slider-header { width:100%; display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); }
 .size-value-badge { color:var(--color-label-secondary); font-size:var(--font-footnote); font-variant-numeric:tabular-nums; }
@@ -1110,6 +1058,56 @@ select option { background:var(--color-bg-secondary); color:var(--color-label-pr
 .popup-close .ui-icon { width:18px; height:18px; }
 .popup-text { margin:var(--space-2) 40px var(--space-5) 0; font-size:var(--font-title-3); font-weight:700; line-height:1.25; }
 .popup-btn { width:100%; min-height:50px; }
+
+
+/* Auto-language conflict confirmation. Shown only when Telegram and WebView
+   resolve to different app languages. */
+.language-conflict-card {
+  padding:var(--space-5);
+}
+.language-conflict-title {
+  margin:0 0 var(--space-2);
+  color:var(--color-label-primary);
+  font-size:var(--font-title-3);
+  font-weight:700;
+  line-height:1.25;
+}
+.language-conflict-text {
+  margin:0 0 var(--space-5);
+  color:var(--color-label-secondary);
+  font-size:var(--font-subheadline);
+  line-height:1.45;
+}
+.language-conflict-actions {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:var(--space-2);
+}
+.language-conflict-choice,
+.language-conflict-auto {
+  appearance:none;
+  min-height:44px;
+  border:0;
+  border-radius:var(--radius-control);
+  font-weight:600;
+  transition:transform var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out), opacity var(--motion-fast) var(--ease-out);
+}
+.language-conflict-choice {
+  padding:10px var(--space-4);
+  background:var(--color-accent);
+  color:#fff;
+  font-size:var(--font-callout);
+}
+.language-conflict-auto {
+  width:100%;
+  margin-top:var(--space-2);
+  padding:8px var(--space-4);
+  background:var(--color-surface-secondary);
+  color:var(--color-accent);
+  font-size:var(--font-subheadline);
+}
+.language-conflict-choice:active,
+.language-conflict-auto:active { transform:scale(.98); }
 
 /* -------------------------------------------------------------------------- */
 /* 11. Image lightbox                                                         */

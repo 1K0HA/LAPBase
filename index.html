@@ -30,7 +30,7 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="./styles.css?v=1.0.27-language-diagnostics">
+  <link rel="stylesheet" href="./styles.css?v=1.0.28-language-final">
 </head>
 <body>
   <svg class="ui-icon-sprite" aria-hidden="true" focusable="false">
@@ -418,25 +418,6 @@
               </div>
             </div>
           </div>
-
-          <div class="language-debug-card" id="languageDebugCard">
-            <div class="language-debug-head">
-              <span class="language-debug-title">Language diagnostics</span>
-              <button type="button" class="language-debug-refresh" onclick="refreshLanguageDiagnostics()">Обновить / Refresh</button>
-            </div>
-            <div class="language-debug-grid" aria-live="polite">
-              <div class="language-debug-row"><span>Direct language_code</span><code id="langDebugDirect">—</code></div>
-              <div class="language-debug-row"><span>initData language_code</span><code id="langDebugInitData">—</code></div>
-              <div class="language-debug-row"><span>Launch language_code</span><code id="langDebugLaunch">—</code></div>
-              <div class="language-debug-row"><span>Resolved Telegram</span><code id="langDebugResolved">—</code></div>
-              <div class="language-debug-row"><span>Resolved source</span><code id="langDebugSource">—</code></div>
-              <div class="language-debug-row"><span>App mode</span><code id="langDebugMode">—</code></div>
-              <div class="language-debug-row"><span>App language</span><code id="langDebugApp">—</code></div>
-              <div class="language-debug-row"><span>Telegram platform</span><code id="langDebugPlatform">—</code></div>
-              <div class="language-debug-row"><span>Browser language</span><code id="langDebugBrowser">—</code></div>
-            </div>
-            <div class="language-debug-hint">Открой Mini App полностью заново и пришли скриншот этого блока. Полный initData и данные пользователя здесь не показываются.</div>
-          </div>
         </div>
 
         <div class="settings-group display-settings-group">
@@ -542,6 +523,19 @@
     </section>
   </main>
 
+  <!-- Подтверждение языка показывается только при конфликте Auto-источников. -->
+  <div class="popup-overlay language-conflict-popup" id="languageConflictPopup" aria-hidden="true">
+    <div class="popup-card language-conflict-card" role="dialog" aria-modal="true" aria-labelledby="languageConflictTitle" aria-describedby="languageConflictText">
+      <div class="language-conflict-title" id="languageConflictTitle" data-i18n="langConflictTitle">Подтвердите язык</div>
+      <div class="language-conflict-text" id="languageConflictText" data-i18n="langConflictText">Telegram и устройство сообщают разные языки. Выберите язык LAPBase или оставьте автоматический режим.</div>
+      <div class="language-conflict-actions">
+        <button type="button" class="language-conflict-choice" onclick="confirmLanguageConflict('ru')">Русский</button>
+        <button type="button" class="language-conflict-choice" onclick="confirmLanguageConflict('en')">English</button>
+      </div>
+      <button type="button" class="language-conflict-auto" onclick="keepAutoLanguage()" data-i18n="langConflictKeepAuto">Оставить Авто</button>
+    </div>
+  </div>
+
   <!-- Попап поддержки -->
   <div class="popup-overlay" id="supportPopup" aria-hidden="true">
     <div class="popup-card" role="dialog" aria-modal="true" aria-labelledby="supportPopupTitle">
@@ -596,6 +590,6 @@
   </div>
 
   <script src="./calculator-math.js?v=1.0.20-full-numbers-scroll-fix" defer></script>
-  <script src="./app.js?v=1.0.37-language-diagnostics" defer></script>
+  <script src="./app.js?v=1.0.38-language-final" defer></script>
 </body>
 </html>
