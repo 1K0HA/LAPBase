@@ -30,7 +30,7 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="./styles.css?v=1.0.26-language-mode">
+  <link rel="stylesheet" href="./styles.css?v=1.0.27-language-diagnostics">
 </head>
 <body>
   <svg class="ui-icon-sprite" aria-hidden="true" focusable="false">
@@ -418,6 +418,25 @@
               </div>
             </div>
           </div>
+
+          <div class="language-debug-card" id="languageDebugCard">
+            <div class="language-debug-head">
+              <span class="language-debug-title">Language diagnostics</span>
+              <button type="button" class="language-debug-refresh" onclick="refreshLanguageDiagnostics()">Обновить / Refresh</button>
+            </div>
+            <div class="language-debug-grid" aria-live="polite">
+              <div class="language-debug-row"><span>Direct language_code</span><code id="langDebugDirect">—</code></div>
+              <div class="language-debug-row"><span>initData language_code</span><code id="langDebugInitData">—</code></div>
+              <div class="language-debug-row"><span>Launch language_code</span><code id="langDebugLaunch">—</code></div>
+              <div class="language-debug-row"><span>Resolved Telegram</span><code id="langDebugResolved">—</code></div>
+              <div class="language-debug-row"><span>Resolved source</span><code id="langDebugSource">—</code></div>
+              <div class="language-debug-row"><span>App mode</span><code id="langDebugMode">—</code></div>
+              <div class="language-debug-row"><span>App language</span><code id="langDebugApp">—</code></div>
+              <div class="language-debug-row"><span>Telegram platform</span><code id="langDebugPlatform">—</code></div>
+              <div class="language-debug-row"><span>Browser language</span><code id="langDebugBrowser">—</code></div>
+            </div>
+            <div class="language-debug-hint">Открой Mini App полностью заново и пришли скриншот этого блока. Полный initData и данные пользователя здесь не показываются.</div>
+          </div>
         </div>
 
         <div class="settings-group display-settings-group">
@@ -577,6 +596,6 @@
   </div>
 
   <script src="./calculator-math.js?v=1.0.20-full-numbers-scroll-fix" defer></script>
-  <script src="./app.js?v=1.0.36-language-auto-launchdata" defer></script>
+  <script src="./app.js?v=1.0.37-language-diagnostics" defer></script>
 </body>
 </html>

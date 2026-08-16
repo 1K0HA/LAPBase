@@ -888,6 +888,58 @@ select option { background:var(--color-bg-secondary); color:var(--color-label-pr
   box-shadow:0 1px 4px rgba(0,0,0,.10);
 }
 
+/* Temporary language diagnostics. Safe: no initData/user identifiers are rendered. */
+.language-debug-card {
+  width:100%;
+  padding:var(--space-4);
+  border-radius:0 0 var(--radius-card) var(--radius-card);
+  background:var(--color-surface-primary);
+  color:var(--color-label-primary);
+}
+.language-debug-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:var(--space-3);
+  margin-bottom:var(--space-3);
+}
+.language-debug-title { font-size:var(--font-footnote); font-weight:700; color:var(--color-label-secondary); }
+.language-debug-refresh {
+  appearance:none;
+  min-height:32px;
+  padding:5px 10px;
+  border:0;
+  border-radius:10px;
+  background:var(--color-surface-secondary);
+  color:var(--color-accent);
+  font-size:var(--font-caption);
+  font-weight:600;
+}
+.language-debug-grid { display:grid; gap:1px; overflow:hidden; border-radius:var(--radius-control); background:var(--color-separator); }
+.language-debug-row {
+  min-width:0;
+  padding:9px 10px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(72px,auto);
+  align-items:center;
+  gap:var(--space-3);
+  background:var(--color-surface-secondary);
+  font-size:var(--font-caption);
+}
+.language-debug-row > span { min-width:0; color:var(--color-label-secondary); overflow-wrap:anywhere; }
+.language-debug-row code {
+  min-width:0;
+  padding:0;
+  background:transparent;
+  color:var(--color-label-primary);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:inherit;
+  font-weight:700;
+  text-align:right;
+  overflow-wrap:anywhere;
+}
+.language-debug-hint { margin-top:var(--space-3); color:var(--color-label-tertiary); font-size:var(--font-caption); line-height:1.4; }
+
 .size-setting-item { flex-direction:column; align-items:stretch; }
 .size-slider-header { width:100%; display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); }
 .size-value-badge { color:var(--color-label-secondary); font-size:var(--font-footnote); font-variant-numeric:tabular-nums; }
