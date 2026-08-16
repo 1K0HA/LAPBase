@@ -865,6 +865,28 @@
     }
   };
 
+  function getTelegramLaunchParam(name) {
+    const values = [];
+
+    // telegram-web-app.js keeps the original Mini App launch parameters here.
+    try {
+      const value = window.Telegram?.WebView?.initParams?.[name];
+      if (value != null && String(value).trim()) values.push(String(value).trim());
+    } catch (_) {}
+
+    // Telegram clients may place launch parameters either in query or hash.
+    for (const raw of [window.location.search, window.location.hash]) {
+      try {
+        const cleaned = String(raw || '').replace(/^[?#]/, '');
+        if (!cleaned) continue;
+        const value = new URLSearchParams(cleaned).get(name);
+        if (value != null && String(value).trim()) values.push(String(value).trim());
+      } catch (_) {}
+    }
+
+    return values[0] || '';
+  }
+
   function getLanguageCodeFromTelegramInitData(rawInitData) {
     try {
       const raw = String(rawInitData || '');
@@ -879,16 +901,51 @@
     }
   }
 
-  function getTelegramLanguageCode() {
+  const TELEGRAM_LANG_SESSION_KEY = 'lapTelegramLanguageCode';
+
+  function rememberTelegramLanguageCode(code) {
+    const normalized = String(code || '').trim().toLowerCase();
+    if (!normalized) return '';
+    try { sessionStorage.setItem(TELEGRAM_LANG_SESSION_KEY, normalized); } catch (_) {}
+    return normalized;
+  }
+
+  function getRememberedTelegramLanguageCode() {
+    try {
+      return String(sessionStorage.getItem(TELEGRAM_LANG_SESSION_KEY) || '').trim().toLowerCase();
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function getTelegramLanguageCode({ allowSessionFallback = true } = {}) {
     const tg = window.Telegram && window.Telegram.WebApp;
 
+    // 1) Standard Telegram Mini App API.
     const direct = tg?.initDataUnsafe?.user?.language_code;
-    if (direct) return String(direct).trim().toLowerCase();
+    if (direct) return rememberTelegramLanguageCode(direct);
 
-    const fromInitData = getLanguageCodeFromTelegramInitData(tg?.initData);
-    if (fromInitData) return fromInitData;
+    // 2) Raw initData exposed by Telegram.WebApp.
+    const fromWebAppInitData = getLanguageCodeFromTelegramInitData(tg?.initData);
+    if (fromWebAppInitData) return rememberTelegramLanguageCode(fromWebAppInitData);
 
-    return '';
+    // 3) Original tgWebAppData retained by telegram-web-app.js.
+    const fromWebViewInitData = getLanguageCodeFromTelegramInitData(
+      window.Telegram?.WebView?.initParams?.tgWebAppData
+    );
+    if (fromWebViewInitData) return rememberTelegramLanguageCode(fromWebViewInitData);
+
+    // 4) Raw launch data from URL query/hash. Some Telegram clients expose it
+    // here even when WebApp.initData has not been populated yet.
+    const fromLaunchData = getLanguageCodeFromTelegramInitData(
+      getTelegramLaunchParam('tgWebAppData')
+    );
+    if (fromLaunchData) return rememberTelegramLanguageCode(fromLaunchData);
+
+    // 5) During minimize/restore Telegram may momentarily expose empty initData.
+    // Keep the last language received in this WebView session instead of
+    // falling back to the phone/browser locale.
+    return allowSessionFallback ? getRememberedTelegramLanguageCode() : '';
   }
 
   function isTelegramMiniAppContext() {
@@ -897,7 +954,12 @@
 
     if (tg?.initDataUnsafe?.user) return true;
     if (String(tg?.initData || '').length > 0) return true;
+    if (String(window.Telegram?.WebView?.initParams?.tgWebAppData || '').length > 0) return true;
+    if (getTelegramLaunchParam('tgWebAppData')) return true;
+    if (getTelegramLaunchParam('tgWebAppVersion')) return true;
+    if (getTelegramLaunchParam('tgWebAppPlatform')) return true;
 
+    // Outside Telegram the official bridge normally reports platform=unknown.
     const platform = String(tg?.platform || '').toLowerCase();
     return Boolean(platform && platform !== 'unknown');
   }
@@ -921,9 +983,11 @@
 
   function detectAutoLanguage() {
     if (isTelegramMiniAppContext()) {
-      // Auto follows Telegram. Russian Telegram -> ru, every other Telegram
-      // language (or temporarily unavailable code) -> en.
-      return telegramLanguageToAppLanguage(getTelegramLanguageCode());
+      const telegramCode = getTelegramLanguageCode();
+      // Auto follows Telegram only. ru / ru-* => Russian; any other actual
+      // Telegram language => English. If launch data is temporarily missing,
+      // keep English until the retry below receives the real Telegram code.
+      return telegramCode ? telegramLanguageToAppLanguage(telegramCode) : 'en';
     }
     return getBrowserFallbackLanguage();
   }
@@ -1046,7 +1110,7 @@
   function syncTelegramLanguageIfActuallyChanged() {
     if (currentLanguageMode !== 'auto' || !isTelegramMiniAppContext()) return false;
 
-    const code = getTelegramLanguageCode();
+    const code = getTelegramLanguageCode({ allowSessionFallback: false }) || getTelegramLanguageCode();
     if (!code) return false;
     if (code === lastTelegramLanguageCode) return false;
 
@@ -1069,6 +1133,8 @@
       currentAppLanguage: currentLang,
       hasInitDataUser: Boolean(tg?.initDataUnsafe?.user),
       hasInitData: Boolean(String(tg?.initData || '')),
+      hasWebViewLaunchData: Boolean(String(window.Telegram?.WebView?.initParams?.tgWebAppData || '')),
+      hasUrlLaunchData: Boolean(getTelegramLaunchParam('tgWebAppData')),
     };
   };
 
@@ -1076,14 +1142,14 @@
 
   // Telegram can expose initData a moment after the deferred script starts.
   // Retry only while Auto is selected; manual RU/EN must never be overwritten.
-  if (currentLanguageMode === 'auto' && isTelegramMiniAppContext() && !lastTelegramLanguageCode) {
-    [50, 150, 400, 800, 1500].forEach(delay => {
+  if (currentLanguageMode === 'auto' && isTelegramMiniAppContext()) {
+    [0, 50, 150, 400, 800, 1500, 2500].forEach(delay => {
       window.setTimeout(() => {
         if (currentLanguageMode !== 'auto') return;
-        const code = getTelegramLanguageCode();
-        if (!code || code === lastTelegramLanguageCode) return;
-        lastTelegramLanguageCode = code;
+        const code = getTelegramLanguageCode({ allowSessionFallback: false }) || getTelegramLanguageCode();
+        if (!code) return;
         const nextLang = telegramLanguageToAppLanguage(code);
+        lastTelegramLanguageCode = code;
         if (nextLang !== currentLang) applyAppLanguage(nextLang, false);
       }, delay);
     });
