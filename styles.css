@@ -2651,3 +2651,15 @@ html.tg-inactive *::after {
     margin-inline-start: auto;
   }
 }
+
+/* Language mode: Auto / Russian / English. */
+.language-setting-item .lang-selector-btn-group {
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 479px) {
+  .language-setting-item { flex-direction: column; align-items: stretch; }
+  .language-setting-item .settings-control,
+  .language-setting-item .lang-selector-btn-group { width: 100%; }
+  .language-setting-item .lang-btn { flex: 1 1 0; min-width: 0; }
+}

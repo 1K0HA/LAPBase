@@ -30,7 +30,7 @@
     })();
   </script>
 
-  <link rel="stylesheet" href="./styles.css?v=1.0.24-support-settings-v5.76">
+  <link rel="stylesheet" href="./styles.css?v=1.0.25-language-mode">
 </head>
 <body>
   <svg class="ui-icon-sprite" aria-hidden="true" focusable="false">
@@ -405,15 +405,16 @@
       <div class="card-update">
         <div class="settings-group">
           <div class="settings-group-title" data-i18n="langGroupTitle">Язык / Language</div>
-          <div class="settings-item">
+          <div class="settings-item language-setting-item">
             <div class="settings-item-label">
               <span class="icon" aria-hidden="true"><svg class="ui-icon" aria-hidden="true"><use href="#icon-globe"></use></svg></span>
               <span data-i18n="appLangLabel">Язык приложения</span>
             </div>
             <div class="settings-control">
-              <div class="lang-selector-btn-group">
-                <button type="button" class="lang-btn active" id="langBtnRu" onclick="setAppLanguage('ru')">Русский</button>
-                <button type="button" class="lang-btn" id="langBtnEn" onclick="setAppLanguage('en')">English</button>
+              <div class="lang-selector-btn-group" role="group" aria-label="Язык приложения">
+                <button type="button" class="lang-btn active" id="langBtnAuto" onclick="setAppLanguageMode('auto')" aria-pressed="true" data-i18n="langAuto">Авто</button>
+                <button type="button" class="lang-btn" id="langBtnRu" onclick="setAppLanguage('ru')" aria-pressed="false">Русский</button>
+                <button type="button" class="lang-btn" id="langBtnEn" onclick="setAppLanguage('en')" aria-pressed="false">English</button>
               </div>
             </div>
           </div>
@@ -576,6 +577,6 @@
   </div>
 
   <script src="./calculator-math.js?v=1.0.20-full-numbers-scroll-fix" defer></script>
-  <script src="./app.js?v=1.0.34-telegram-language-source-of-truth" defer></script>
+  <script src="./app.js?v=1.0.35-language-auto-manual" defer></script>
 </body>
 </html>

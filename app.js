@@ -649,6 +649,7 @@
       settingsTitle: "Настройки",
       langGroupTitle: "Язык / Language",
       appLangLabel: "Язык приложения",
+      langAuto: "Авто",
       displayGroupTitle: "Отображение",
       textSizeLabel: "Размер текста",
       uiSizeLabel: "Размер интерфейса",
@@ -807,6 +808,7 @@
       settingsTitle: "Settings",
       langGroupTitle: "Language / Язык",
       appLangLabel: "App Language",
+      langAuto: "Auto",
       displayGroupTitle: "Display",
       textSizeLabel: "Text Size",
       uiSizeLabel: "Interface Size",
@@ -909,50 +911,64 @@
     return telegramLanguageToAppLanguage(browserLang);
   }
 
-  function detectNativeLanguage() {
+  const APP_LANG_MODE_STORAGE_KEY = 'appLangMode';
+  const APP_LANG_MODES = new Set(['auto', 'ru', 'en']);
+
+  function getSavedAppLanguageMode() {
+    const saved = localStorage.getItem(APP_LANG_MODE_STORAGE_KEY);
+    return APP_LANG_MODES.has(saved) ? saved : 'auto';
+  }
+
+  function detectAutoLanguage() {
     if (isTelegramMiniAppContext()) {
-      // Inside Telegram there are only two outcomes by design:
-      // Russian Telegram -> ru; every other/unknown Telegram language -> en.
-      // Browser locale and old localStorage values never participate here.
+      // Auto follows Telegram. Russian Telegram -> ru, every other Telegram
+      // language (or temporarily unavailable code) -> en.
       return telegramLanguageToAppLanguage(getTelegramLanguageCode());
     }
-
-    const saved = localStorage.getItem('appLang');
-    if (saved && i18n[saved]) return saved;
     return getBrowserFallbackLanguage();
   }
 
-  let currentLang = detectNativeLanguage();
+  let currentLanguageMode = getSavedAppLanguageMode();
+  let currentLang = currentLanguageMode === 'auto'
+    ? detectAutoLanguage()
+    : currentLanguageMode;
   let lastTelegramLanguageCode = getTelegramLanguageCode();
 
-  function setAppLanguage(lang, vibrate = true, options = {}) {
-    const inTelegram = isTelegramMiniAppContext();
-    const source = options.source || 'manual';
+  function updateLanguageControls() {
+    const autoBtn = document.getElementById('langBtnAuto');
+    const ruBtn = document.getElementById('langBtnRu');
+    const enBtn = document.getElementById('langBtnEn');
 
-    // In Telegram the Telegram client is the source of truth. The old language
-    // buttons cannot create a persistent override that later fights auto mode.
-    if (inTelegram && source !== 'telegram') {
-      const telegramCode = getTelegramLanguageCode();
-      lang = telegramCode ? telegramLanguageToAppLanguage(telegramCode) : currentLang;
+    if (autoBtn) {
+      const active = currentLanguageMode === 'auto';
+      autoBtn.classList.toggle('active', active);
+      autoBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
     }
+    if (ruBtn) {
+      const active = currentLanguageMode === 'ru';
+      ruBtn.classList.toggle('active', active);
+      ruBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    }
+    if (enBtn) {
+      const active = currentLanguageMode === 'en';
+      enBtn.classList.toggle('active', active);
+      enBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    }
+  }
 
+  function applyAppLanguage(lang, vibrate = false) {
     if (!i18n[lang]) return;
     if (vibrate) nativeVibrate('click');
     currentLang = lang;
-
-    if (inTelegram) localStorage.removeItem('appLang');
-    else localStorage.setItem('appLang', lang);
-
     document.documentElement.lang = lang;
 
-    const ruBtn = document.getElementById('langBtnRu');
-    const enBtn = document.getElementById('langBtnEn');
-    if (ruBtn) ruBtn.classList.toggle('active', lang === 'ru');
-    if (enBtn) enBtn.classList.toggle('active', lang === 'en');
+    updateLanguageControls();
 
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
-      if (i18n[lang][key]) el.innerHTML = i18n[lang][key];
+      if (i18n[lang][key]) {
+        el.innerHTML = i18n[lang][key];
+      }
     });
 
     document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
@@ -1004,22 +1020,39 @@
     });
   }
 
+  function setAppLanguageMode(mode, vibrate = true) {
+    if (!APP_LANG_MODES.has(mode)) return;
+
+    currentLanguageMode = mode;
+    localStorage.setItem(APP_LANG_MODE_STORAGE_KEY, mode);
+
+    // Keep appLang only as a compatibility value for older builds. Auto owns
+    // no fixed language, while manual modes persist exactly like accent/size.
+    if (mode === 'auto') localStorage.removeItem('appLang');
+    else localStorage.setItem('appLang', mode);
+
+    const nextLang = mode === 'auto' ? detectAutoLanguage() : mode;
+    applyAppLanguage(nextLang, vibrate);
+  }
+
+  // Backward-compatible public function used by the RU/EN buttons.
+  function setAppLanguage(lang, vibrate = true) {
+    if (lang !== 'ru' && lang !== 'en') return;
+    setAppLanguageMode(lang, vibrate);
+  }
+
+  window.setAppLanguageMode = setAppLanguageMode;
+
   function syncTelegramLanguageIfActuallyChanged() {
-    if (!isTelegramMiniAppContext()) return false;
+    if (currentLanguageMode !== 'auto' || !isTelegramMiniAppContext()) return false;
 
     const code = getTelegramLanguageCode();
     if (!code) return false;
-
-    // Critical rule: minimizing/restoring the same Mini App session must not
-    // re-apply an old language. We only react when Telegram itself reports a
-    // different language_code than the one seen previously.
     if (code === lastTelegramLanguageCode) return false;
 
     lastTelegramLanguageCode = code;
     const nextLang = telegramLanguageToAppLanguage(code);
-    if (nextLang !== currentLang) {
-      setAppLanguage(nextLang, false, { source: 'telegram' });
-    }
+    if (nextLang !== currentLang) applyAppLanguage(nextLang, false);
     return true;
   }
 
@@ -1027,6 +1060,7 @@
   window.__lapLanguageDebug = function() {
     const tg = window.Telegram && window.Telegram.WebApp;
     return {
+      languageMode: currentLanguageMode,
       inTelegramMiniApp: isTelegramMiniAppContext(),
       telegramLanguageCode: getTelegramLanguageCode() || null,
       lastTelegramLanguageCode: lastTelegramLanguageCode || null,
@@ -1040,17 +1074,17 @@
 
   window.__lapSyncAppLanguageFromTelegram = syncTelegramLanguageIfActuallyChanged;
 
-  // Telegram may finish exposing initData shortly after our deferred script
-  // starts. Retry only during the initial launch. After that, returning from
-  // the background never changes language unless Telegram reports a new code.
-  if (isTelegramMiniAppContext() && !lastTelegramLanguageCode) {
+  // Telegram can expose initData a moment after the deferred script starts.
+  // Retry only while Auto is selected; manual RU/EN must never be overwritten.
+  if (currentLanguageMode === 'auto' && isTelegramMiniAppContext() && !lastTelegramLanguageCode) {
     [50, 150, 400, 800, 1500].forEach(delay => {
       window.setTimeout(() => {
+        if (currentLanguageMode !== 'auto') return;
         const code = getTelegramLanguageCode();
         if (!code || code === lastTelegramLanguageCode) return;
         lastTelegramLanguageCode = code;
         const nextLang = telegramLanguageToAppLanguage(code);
-        if (nextLang !== currentLang) setAppLanguage(nextLang, false, { source: 'telegram' });
+        if (nextLang !== currentLang) applyAppLanguage(nextLang, false);
       }, delay);
     });
   }
@@ -4044,7 +4078,7 @@
 
     // Global appearance/language are cheap and should be ready immediately.
     setAccentColor(localStorage.getItem('appAccentColor') || 'orange', false);
-    setAppLanguage(currentLang, false);
+    applyAppLanguage(currentLang, false);
 
     // Pre-warm only when the device is not classified as LOW. Low-end
     // Telegram Android devices initialize on the first Calculator tap instead.
